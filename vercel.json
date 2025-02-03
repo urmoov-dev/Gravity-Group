@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "src/routes/orion/+server.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
