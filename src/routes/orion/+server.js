@@ -1,6 +1,12 @@
 import { OPENAI_API_KEY } from '$env/static/private';
 import OPENAI from 'openai';
 
+const response = await fetch('https://api.openai.com/v1/some-endpoint', {
+  headers: {
+    Authorization: `Bearer ${OPENAI_API_KEY}`,
+  },
+});
+
 const openai = new OPENAI({
   apiKey: OPENAI_API_KEY, // Certifique-se de que a variável está correta
 });

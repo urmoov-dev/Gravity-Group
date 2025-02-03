@@ -1,0 +1,8 @@
+{
+    "functions": {
+      "node-fetch": {
+        "includeFiles": "node_modules/node-fetch/**"
+      }
+    }
+  }
+  

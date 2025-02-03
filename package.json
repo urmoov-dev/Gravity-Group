@@ -36,9 +36,9 @@
 	},
 	"dependencies": {
 		"dotenv": "^16.4.7",
+		"encoding": "^0.1.13",
 		"node-fetch": "^3.3.2",
 		"openai": "^4.82.0",
-		"pnpm": "^9.15.4",
-		"node-fetch": "^3.2.10"
+		"pnpm": "^9.15.4"
 	}
 }
