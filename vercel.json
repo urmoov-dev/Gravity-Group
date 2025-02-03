@@ -1,8 +1,7 @@
 {
-    "functions": {
-      "node-fetch": {
-        "includeFiles": "node_modules/node-fetch/**"
-      }
+  "functions": {
+    "src/routes/orion/+server.js": {
+      "runtime": "nodejs18.x"
     }
   }
-  
+}
