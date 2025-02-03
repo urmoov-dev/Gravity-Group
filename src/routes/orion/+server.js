@@ -1,8 +1,7 @@
-import { OPENAI_API_KEY } from '$env/static/private';
 import OPENAI from 'openai';
 
 const openai = new OPENAI({
-  apiKey: OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY, // Usando process.env diretamente
 });
 
 export async function POST({ request }) {
