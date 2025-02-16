@@ -1,7 +1,15 @@
 {
+  "version": 2,
+  "framework": "sveltekit",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/node@3"
+    }
+  ],
   "functions": {
-    "src/routes/orion/+server.js": {
-      "runtime": "nodejs18.x"
+    "src/routes/**/*": {
+      "runtime": "nodejs22.x"
     }
   }
 }

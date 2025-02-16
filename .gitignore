@@ -1,5 +1,4 @@
 test-results
-node_modules
 
 # Output
 .output
@@ -12,6 +11,7 @@ node_modules
 # OS
 .DS_Store
 Thumbs.db
+node_modules
 
 # Env
 .env
