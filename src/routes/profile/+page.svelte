@@ -5,11 +5,16 @@
   import ApexCharts from 'apexcharts';
   import { browser } from '$app/environment';
   import type { User } from 'firebase/auth';
+  import { investmentLevels } from '$lib/types/profile';
+  import type { InvestmentLevel } from '$lib/types/profile';
 
   let user: User | null = null;
   let loading = true;
   let charts: ApexCharts[] = [];
-  let initialized = false;
+  let currentValue = 750000; // Exemplo - isso viria do banco de dados
+  let currentLevel: InvestmentLevel;
+  let nextLevel: InvestmentLevel;
+  let progress = 0;
 
   interface Nivel {
     valor: number;
@@ -118,57 +123,99 @@
   function initializeCharts() {
     if (!browser) return;
     
-    const element = document.querySelector('#progress-chart');
-    if (!element) return;
+    // Aguarda o elemento estar disponível no DOM
+    setTimeout(() => {
+      const element = document.querySelector('#progress-chart');
+      if (!element) return;
 
-    const options = {
-      series: [{
-        name: 'Patrimônio',
-        data: historicoInvestimentos.map(h => h.valor)
-      }],
-      chart: {
-        type: 'area',
-        height: 350,
-        toolbar: { show: false },
-        animations: { enabled: true },
-        background: 'transparent'
-      },
-      stroke: {
-        curve: 'smooth',
-        width: 2
-      },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shadeIntensity: 1,
-          opacityFrom: 0.45,
-          opacityTo: 0.05
+      const options = {
+        series: [{
+          name: 'Patrimônio',
+          data: historicoInvestimentos.map(h => h.valor)
+        }],
+        chart: {
+          type: 'area',
+          height: 350,
+          toolbar: { show: false },
+          animations: { enabled: true },
+          background: 'transparent',
+          fontFamily: 'inherit'
+        },
+        colors: ['#22c55e'], // Verde para combinar com o tema
+        stroke: {
+          curve: 'smooth',
+          width: 2,
+          colors: ['#22c55e']
+        },
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.45,
+            opacityTo: 0.05,
+            stops: [0, 100],
+            colorStops: [
+              {
+                offset: 0,
+                color: '#22c55e',
+                opacity: 0.4
+              },
+              {
+                offset: 100,
+                color: '#22c55e',
+                opacity: 0.1
+              }
+            ]
+          }
+        },
+        grid: {
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          strokeDashArray: 4,
+          xaxis: {
+            lines: {
+              show: true
+            }
+          }
+        },
+        xaxis: {
+          categories: historicoInvestimentos.map(h => h.data),
+          labels: {
+            style: { 
+              colors: 'rgba(255, 255, 255, 0.6)',
+              fontFamily: 'inherit'
+            }
+          },
+          axisBorder: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          },
+          axisTicks: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        yaxis: {
+          labels: {
+            formatter: (value: number) => formatCurrency(value),
+            style: { 
+              colors: 'rgba(255, 255, 255, 0.6)',
+              fontFamily: 'inherit'
+            }
+          }
+        },
+        theme: { mode: 'dark' },
+        tooltip: {
+          theme: 'dark',
+          y: {
+            formatter: (value: number) => formatCurrency(value)
+          }
         }
-      },
-      xaxis: {
-        categories: historicoInvestimentos.map(h => h.data),
-        labels: {
-          style: { colors: 'rgba(255, 255, 255, 0.6)' }
-        }
-      },
-      yaxis: {
-        labels: {
-          formatter: (value: number) => formatCurrency(value),
-          style: { colors: 'rgba(255, 255, 255, 0.6)' }
-        }
-      },
-      theme: { mode: 'dark' },
-      tooltip: {
-        theme: 'dark',
-        y: {
-          formatter: (value: number) => formatCurrency(value)
-        }
+      };
+
+      if (charts.length === 0) {
+        const chart = new ApexCharts(element, options);
+        chart.render();
+        charts.push(chart);
       }
-    };
-
-    const chart = new ApexCharts(element, options);
-    chart.render();
-    charts.push(chart);
+    }, 100); // Pequeno delay para garantir que o DOM está pronto
   }
 
   onMount(() => {
@@ -178,10 +225,7 @@
       } else {
         user = currentUser;
         loading = false;
-        if (!initialized) {
-          initializeCharts();
-          initialized = true;
-        }
+        initializeCharts(); // Chama diretamente aqui
       }
     });
 
@@ -192,12 +236,24 @@
     };
   });
 
-  $: patrimonioAtual = historicoInvestimentos[historicoInvestimentos.length - 1].valor;
-  $: nivelAtual = getNivelAtual(patrimonioAtual);
-  $: proximoNivel = getProximoNivel(patrimonioAtual);
-  $: progressoProximoNivel = Math.min(100, (patrimonioAtual / proximoNivel.valor) * 100);
+  $: {
+    currentLevel = investmentLevels.find(
+      level => currentValue >= level.minValue && 
+      (level.maxValue === null || currentValue < level.maxValue)
+    ) || investmentLevels[0];
+
+    nextLevel = investmentLevels[investmentLevels.indexOf(currentLevel) + 1];
+
+    if (nextLevel) {
+      progress = ((currentValue - currentLevel.minValue) / 
+        (nextLevel.minValue - currentLevel.minValue)) * 100;
+    } else {
+      progress = 100;
+    }
+  }
 </script>
 
+<!-- Template HTML -->
 {#if loading}
   <div class="min-h-screen bg-black flex items-center justify-center">
     <div class="text-white text-center">
@@ -221,7 +277,7 @@
             <div class="w-24 h-24 bg-gradient-to-br from-gray-900 to-black rounded-full border border-white/20 flex items-center justify-center text-4xl relative overflow-hidden">
               <div class="stars absolute inset-0 opacity-50"></div>
               <div class="relative animate-pulse">
-                {nivelAtual.icon}
+                {currentLevel.icon}
               </div>
             </div>
           </div>
@@ -232,12 +288,73 @@
             <p class="text-gray-400">{user?.email}</p>
             <div class="mt-2">
               <span class="px-4 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full text-sm border border-white/10 flex items-center space-x-2 w-fit">
-                <span class="text-lg">{nivelAtual.icon}</span>
-                <span>{nivelAtual.nome}</span>
+                <span class="text-lg">{currentLevel.icon}</span>
+                <span>{currentLevel.name}</span>
               </span>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Nível Atual -->
+      <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
+        <div class="flex items-center space-x-4 mb-4">
+          <span class="text-4xl">{currentLevel.icon}</span>
+          <div>
+            <h2 class="text-2xl font-bold {currentLevel.color}">{currentLevel.name}</h2>
+            <p class="text-gray-400">{currentLevel.description}</p>
+          </div>
+        </div>
+
+        <!-- Barra de Progresso -->
+        {#if nextLevel}
+          <div class="mb-4">
+            <div class="flex justify-between text-sm text-gray-400 mb-1">
+              <span>R$ {currentLevel.minValue.toLocaleString('pt-BR')}</span>
+              <span>R$ {nextLevel.minValue.toLocaleString('pt-BR')}</span>
+            </div>
+            <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
+              <div 
+                class="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-500"
+                style="width: {progress}%"
+              ></div>
+            </div>
+            <p class="text-sm text-gray-400 mt-2">
+              {nextLevel.nextGoal}
+            </p>
+          </div>
+        {/if}
+
+        <!-- Benefícios -->
+        <div class="mt-6">
+          <h3 class="text-xl font-semibold mb-4">Seus Benefícios</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {#each currentLevel.benefits as benefit}
+              <div class="flex items-center space-x-2 text-gray-300">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{benefit}</span>
+              </div>
+            {/each}
+          </div>
+        </div>
+      </div>
+
+      <!-- Próximos Níveis -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {#each investmentLevels.filter(level => level.minValue > currentValue) as level}
+          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 opacity-75 hover:opacity-100 transition-opacity">
+            <div class="flex items-center space-x-3 mb-4">
+              <span class="text-3xl">{level.icon}</span>
+              <h3 class="text-xl font-semibold {level.color}">{level.name}</h3>
+            </div>
+            <p class="text-gray-400 mb-4">{level.description}</p>
+            <div class="text-sm text-gray-500">
+              Disponível a partir de R$ {level.minValue.toLocaleString('pt-BR')}
+            </div>
+          </div>
+        {/each}
       </div>
 
       <!-- Jornada Espacial -->
@@ -251,12 +368,12 @@
           <div class="flex items-center justify-between">
             <div>
               <h2 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Missão Espacial em Andamento
+                Jornada Espacial em Andamento
               </h2>
-              <p class="text-sm text-gray-400 mt-1">Jornada até Alfa Centauri</p>
+              <p class="text-sm text-gray-400 mt-1">Explorando o Sistema Solar</p>
             </div>
             <div class="text-right">
-              <div class="text-2xl font-bold text-green-400">{formatCurrency(patrimonioAtual)}</div>
+              <div class="text-2xl font-bold text-green-400">{formatCurrency(currentValue)}</div>
               <div class="text-sm text-gray-400">Capital Acumulado</div>
             </div>
           </div>
@@ -264,61 +381,11 @@
           <!-- Status da Missão -->
           <div class="grid grid-cols-3 gap-4 mb-8">
             <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg p-4 border border-white/5">
-              <div class="text-sm text-gray-400">Distância Atual</div>
-              <div class="text-lg font-semibold">{nivelAtual.distancia}</div>
-            </div>
-            <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg p-4 border border-white/5">
-              <div class="text-sm text-gray-400">Velocidade</div>
-              <div class="text-lg font-semibold">{nivelAtual.velocidade}</div>
-            </div>
-            <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg p-4 border border-white/5">
-              <div class="text-sm text-gray-400">Próxima Parada</div>
-              <div class="text-lg font-semibold">{proximoNivel.nome}</div>
-            </div>
-          </div>
-
-          <!-- Linha do Tempo da Missão -->
-          <div class="relative">
-            <div class="absolute h-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-full w-full"></div>
-            <div 
-              class="absolute h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
-              style="width: {progressoProximoNivel}%"
-            ></div>
-            
-            <div class="grid grid-cols-5 gap-4 relative pt-6">
-              {#each niveis as nivel}
-                <div class="text-center relative group">
-                  <div class="absolute -top-5 left-1/2 transform -translate-x-1/2">
-                    <div class="w-3 h-3 rounded-full bg-gray-800 border-2 
-                      {patrimonioAtual >= nivel.valor ? 'border-purple-500 bg-purple-900' : 'border-gray-600'} 
-                      transition-all duration-300"
-                    ></div>
-                  </div>
-                  
-                  <div class="relative">
-                    <div class="w-16 h-16 mx-auto bg-gradient-to-br from-gray-900 to-black rounded-full flex items-center justify-center text-2xl mb-2 
-                      {patrimonioAtual >= nivel.valor ? 'from-blue-500/20 to-purple-500/20 animate-pulse' : ''} 
-                      transition-all duration-500 border border-white/10"
-                    >
-                      <div class="stars absolute inset-0 opacity-30 rounded-full"></div>
-                      <span class="relative">{nivel.icon}</span>
-                    </div>
-                    
-                    <div class="opacity-0 group-hover:opacity-100 absolute -top-24 left-1/2 transform -translate-x-1/2 transition-all duration-300 pointer-events-none">
-                      <div class="bg-gray-900/90 backdrop-blur-sm rounded-lg p-3 shadow-xl border border-white/10 w-48">
-                        <div class="font-semibold">{nivel.nome}</div>
-                        <div class="text-sm text-gray-400 mt-1">{nivel.desc}</div>
-                        <div class="text-sm text-green-400 mt-1">{formatCurrency(nivel.valor)}</div>
-                        <div class="text-xs text-gray-500 mt-1">
-                          Distância: {nivel.distancia}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="text-xs text-gray-400 mt-2">{nivel.nome}</div>
-                </div>
-              {/each}
+              <div class="text-sm text-gray-400">Nível Atual</div>
+              <div class="text-lg font-semibold flex items-center gap-2">
+                <span class="text-3xl">{currentLevel.icon}</span>
+                <span>{currentLevel.name}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -334,11 +401,11 @@
       <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6">
         <h2 class="text-xl font-semibold mb-4">Conquistas</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {#each niveis as nivel}
-            <div class="bg-white/5 rounded-lg p-4 text-center {patrimonioAtual >= nivel.valor ? 'border border-green-500/30' : 'opacity-50'}">
+          {#each investmentLevels as nivel}
+            <div class="bg-white/5 rounded-lg p-4 text-center {currentValue >= nivel.minValue ? 'border border-green-500/30' : 'opacity-50'}">
               <div class="text-3xl mb-2">{nivel.icon}</div>
-              <div class="font-semibold">{nivel.nome}</div>
-              <div class="text-sm text-gray-400">{formatCurrency(nivel.valor)}</div>
+              <div class="font-semibold">{nivel.name}</div>
+              <div class="text-sm text-gray-400">{formatCurrency(nivel.minValue)}</div>
             </div>
           {/each}
         </div>
