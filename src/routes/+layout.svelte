@@ -49,10 +49,12 @@
 				href="/profile" 
 				class="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
 			  >
-				<div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-				  {auth.currentUser.email[0].toUpperCase()}
-				</div>
-				<span>{auth.currentUser.email}</span>
+				{#if auth.currentUser?.email}
+				  <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
+					{auth.currentUser.email[0].toUpperCase()}
+				  </div>
+				  <span>{auth.currentUser.email}</span>
+				{/if}
 			  </a>
 			  <button 
 				on:click={handleSignOut}
@@ -92,10 +94,12 @@
 				href="/profile"
 				class="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
 			  >
-				<div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-				  {auth.currentUser.email[0].toUpperCase()}
-				</div>
-				<span>{auth.currentUser.email}</span>
+				{#if auth.currentUser?.email}
+				  <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
+					{auth.currentUser.email[0].toUpperCase()}
+				  </div>
+				  <span>{auth.currentUser.email}</span>
+				{/if}
 			  </a>
 			  <button 
 				on:click={handleSignOut}

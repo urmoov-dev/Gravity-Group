@@ -1,5 +1,8 @@
+/* @ts-ignore */
 @tailwind base;
+/* @ts-ignore */
 @tailwind components;
+/* @ts-ignore */
 @tailwind utilities;
 
 body {

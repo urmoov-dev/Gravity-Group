@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import { auth } from '$lib/firebase';
   import { goto } from '$app/navigation';
@@ -6,15 +6,17 @@
   import * as THREE from 'three';
   import { browser } from '$app/environment';
   import ApexCharts from 'apexcharts';
+  import type { User } from 'firebase/auth';
+  import type { Investment, ChartOptions } from '$lib/types';
 
-  let user = null;
-  let container;
-  let globeGroup;
-  let stars;
+  let user: User | null = null;
+  let container: HTMLElement;
+  let globeGroup: THREE.Group;
+  let stars: THREE.Points;
   let showProfileModal = false;
   let loadingCharts = true;
   let initialized = false;
-  let charts = [];
+  let charts: ApexCharts[] = [];
   let activeTab = 'dashboard';
   let loading = true;
 
@@ -182,7 +184,7 @@
   }
 
   // Função para alternar seleção de investimento
-  function toggleInvestmentSelection(partnerName) {
+  function toggleInvestmentSelection(partnerName: string) {
     if (selectedInvestments.includes(partnerName)) {
       selectedInvestments = selectedInvestments.filter(p => p !== partnerName);
     } else {
@@ -316,7 +318,12 @@
           x: {
             show: true
           },
-          custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+          custom: ({ series, seriesIndex, dataPointIndex, w }: {
+            series: number[][],
+            seriesIndex: number,
+            dataPointIndex: number,
+            w: any
+          }) => {
             const date = w.globals.categoryLabels[dataPointIndex];
             const value = series[seriesIndex][dataPointIndex];
             const parceiros = selectedInvestments.map(partner => {
@@ -392,18 +399,19 @@
     showProfileModal = !showProfileModal;
   }
 
-  async function updateProfile(event) {
+  async function updateProfile(event: Event) {
+    event.preventDefault();
     // Implementar atualização do perfil
   }
 
-  function formatCurrency(value) {
+  function formatCurrency(value: number): string {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
   }
 
-  function formatDate(dateString) {
+  function formatDate(dateString: string): string {
     return new Date(dateString).toLocaleDateString('pt-BR');
   }
 
@@ -416,8 +424,8 @@
   }
 
   // Função para obter URL da imagem com fallback
-  function getPartnerLogo(partnerName) {
-    const logoMap = {
+  function getPartnerLogo(partnerName: string): string {
+    const logoMap: Record<string, string> = {
       'Dominion': 'adominion-logo.png',
       'Fictor': 'fictor-logo.jpg',
       'Hurst': 'hurst-logo.png',
@@ -516,7 +524,7 @@
               <h3 class="text-gray-400 text-sm mb-2">Próximo Pagamento</h3>
               <p class="text-3xl font-bold">{formatDate(investments[0].nextPayment)}</p>
               <div class="mt-2 text-sm text-blue-400">
-                Em {Math.ceil((new Date(investments[0].nextPayment) - new Date()) / (1000 * 60 * 60 * 24))} dias
+                Em {Math.ceil((new Date(investments[0].nextPayment).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} dias
               </div>
             </div>
             

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { onMount } from 'svelte';
   import * as THREE from 'three';
   import { enhance } from '$app/forms';
@@ -9,9 +9,9 @@
   let loading = false;
   let error = '';
 
-  let container;
-  let globeGroup;
-  let stars;
+  let container: HTMLElement;
+  let globeGroup: THREE.Group;
+  let stars: THREE.Points;
 
   onMount(() => {
     // Verifica se já está autenticado
@@ -96,8 +96,10 @@
       gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
       gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
       
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 32, 32);
+      if (ctx) {
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
       
       return new THREE.CanvasTexture(canvas);
     })();
@@ -163,11 +165,11 @@
     };
   });
 
-  function createAttractionAnimation(originalY, targetY) {
+  function handleAnimation(originalY: number, targetY: number) {
     const duration = 10000;
     const start = performance.now();
     
-    function attractionAnimation(currentTime) {
+    function attractionAnimation(currentTime: number) {
       const elapsed = currentTime - start;
       const progress = Math.min(elapsed / duration, 1);
       
@@ -237,31 +239,44 @@
     return attractionAnimation;
   }
 
+  function easeInOutQuad(currentTime: number, start: number, change: number, duration: number) {
+    currentTime /= duration / 2;
+    if (currentTime < 1) return change / 2 * currentTime * currentTime + start;
+    currentTime--;
+    return -change / 2 * (currentTime * (currentTime - 2) - 1) + start;
+  }
+
+  function easeOutQuad(t: number): number {
+    return -t * (t - 2);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     loading = true;
     error = '';
 
     // Inicia a animação
-    const animation = createAttractionAnimation(globeGroup.position.y, -5);
+    const animation = handleAnimation(globeGroup.position.y, -5);
     requestAnimationFrame(animation);
 
-    const formData = new FormData(event.target);
+    const formData = new FormData(event.target as HTMLFormElement);
     const email = formData.get('email');
-    const password = formData.get('password');
+    if (typeof email === 'string') {
+      const password = formData.get('password');
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      if (userCredential.user) {
-        // Redireciona imediatamente após o login bem-sucedido
-        goto('/hub');
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        
+        if (userCredential.user) {
+          // Redireciona imediatamente após o login bem-sucedido
+          goto('/hub');
+        }
+      } catch (e) {
+        error = e.message;
+        globeGroup.position.y = -12;
+      } finally {
+        loading = false;
       }
-    } catch (e) {
-      error = e.message;
-      globeGroup.position.y = -12;
-    } finally {
-      loading = false;
     }
   }
 
@@ -270,7 +285,7 @@
     error = '';
 
     // Inicia a animação
-    const animation = createAttractionAnimation(globeGroup.position.y, -5);
+    const animation = handleAnimation(globeGroup.position.y, -5);
     requestAnimationFrame(animation);
 
     try {
