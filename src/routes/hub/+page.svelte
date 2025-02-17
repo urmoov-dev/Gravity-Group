@@ -468,39 +468,9 @@
   </div>
 {:else}
   <div class="min-h-screen bg-black text-white overflow-auto">
-    <!-- Navbar com perfil -->
-    <header class="sticky top-0 z-50 bg-black/80 backdrop-blur-sm border-b border-white/10">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <div class="flex items-center">
-            <span class="text-xl font-bold">Gravity Hub</span>
-          </div>
-          <div class="flex items-center space-x-6">
-            {#if user}
-              <button 
-                on:click={toggleProfileModal}
-                class="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
-              >
-                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                  {user.email[0].toUpperCase()}
-                </div>
-                <span>{user.email}</span>
-              </button>
-              <button
-                on:click={handleLogout}
-                class="px-4 py-2 text-sm text-white bg-transparent border border-white/20 rounded-md hover:bg-white/5"
-              >
-                Sair
-              </button>
-            {/if}
-          </div>
-        </div>
-      </div>
-    </header>
-
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
       <!-- Navegação das abas -->
-      <div class="sticky top-16 z-40 bg-black/80 backdrop-blur-sm -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div class="bg-black/80 backdrop-blur-sm -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <nav class="flex space-x-8 overflow-x-auto scrollbar-none border-b border-white/10">
           {#each tabs as tab}
             <button
