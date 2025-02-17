@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import '../app.css'; // Importação obrigatória para estilo global
 	import OrionChat from '$lib/components/OrionChat.svelte';
 	import { page } from '$app/stores';
@@ -6,9 +6,9 @@
 	import { signOut } from 'firebase/auth';
 	import { goto } from '$app/navigation';
   
-	let links = [
-	  { name: "Marketplace", href: "/marketplace" },
-	  { name: "Contato", href: "/contato" },
+	const menuItems = [
+	  { href: '/hub', label: 'Hub' },
+	  { href: '/profile', label: 'Perfil' }
 	];
   
 	let menuVisible = false;
@@ -37,8 +37,8 @@
 		<div class="hidden md:flex items-center space-x-6">
 		  <!-- Links de navegação -->
 		  <nav class="flex space-x-6">
-			{#each links as link}
-			  <a href={link.href} class="hover:text-green-500 transition">{link.name}</a>
+			{#each menuItems as item}
+			  <a href={item.href} class="hover:text-green-500 transition">{item.label}</a>
 			{/each}
 		  </nav>
 
@@ -83,8 +83,8 @@
 	{#if menuVisible}
 	  <div id="mobile-menu" class="md:hidden bg-gray-800">
 		<nav class="flex flex-col items-start space-y-2 p-4">
-		  {#each links as link}
-			<a href={link.href} class="hover:text-green-500 transition">{link.name}</a>
+		  {#each menuItems as item}
+			<a href={item.href} class="hover:text-green-500 transition">{item.label}</a>
 		  {/each}
 		  
 		  <!-- Perfil e botão de sair para mobile -->
