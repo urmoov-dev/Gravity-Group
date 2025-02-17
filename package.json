@@ -1,50 +1,37 @@
 {
-	"name": "gravityskeletonpage",
+	"name": "gravity-group",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"dev": "node node_modules/vite/bin/vite.js dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint .",
-		"test:e2e": "playwright test",
-		"test": "npm run test:e2e"
+		"dev": "npx vite dev",
+		"build": "npx vite build",
+		"preview": "npx vite preview",
+		"prepare": "svelte-kit sync"
 	},
 	"devDependencies": {
-		"@eslint/compat": "^1.2.5",
-		"@eslint/js": "^9.18.0",
-		"@playwright/test": "^1.49.1",
-		"@sveltejs/adapter-vercel": "^5.5.2",
-		"@sveltejs/kit": "^2.16.0",
-		"@sveltejs/vite-plugin-svelte": "^5.0.0",
+		"@sveltejs/adapter-vercel": "^3.0.0",
+		"@sveltejs/kit": "^2.0.0",
+		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@tailwindcss/forms": "^0.5.10",
 		"@tailwindcss/typography": "^0.5.16",
-		"autoprefixer": "^10.4.20",
-		"eslint": "^9.18.0",
-		"eslint-config-prettier": "^10.0.1",
-		"eslint-plugin-svelte": "^2.46.1",
-		"globals": "^15.14.0",
+		"autoprefixer": "^10.4.14",
+		"postcss": "^8.4.24",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",
 		"prettier-plugin-tailwindcss": "^0.6.10",
-		"svelte": "^5.0.0",
-		"tailwindcss": "^3.4.17",
-		"vite": "^6.0.0"
+		"svelte": "^4.0.0",
+		"tailwindcss": "^3.3.2",
+		"vite": "^4.4.2"
 	},
 	"dependencies": {
+		"apexcharts": "^3.41.0",
 		"chart.js": "^4.4.1",
-		"dotenv": "^16.4.7",
 		"encoding": "^0.1.13",
-		"firebase": "^11.3.1",
+		"firebase": "^10.7.1",
 		"jsonwebtoken": "^9.0.2",
-		"node-fetch": "^3.3.2",
-		"openai": "^4.82.0",
-		"pnpm": "^9.15.4",
 		"svelte-chartjs": "^3.1.2",
-		"three": "^0.173.0"
+		"three": "^0.159.0"
 	},
 	"engines": {
 		"node": ">=18.17.0"

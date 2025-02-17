@@ -1,18 +1,34 @@
 <script>
-    let title = "Bem-vindo ao Gravity Group";
-    let subtitle = "Explore o universo da independência financeira.";
-  </script>
-  
-  <div class="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center justify-center">
-    <div class="text-center space-y-6 max-w-2xl mx-auto px-4">
-      <h1 class="text-5xl font-bold text-white">{title}</h1>
-      <p class="text-lg text-gray-300">{subtitle}</p>
-      <a
-        href="/orion"
-        class="inline-block bg-green-500 text-black py-3 px-6 rounded-lg hover:bg-green-600 transition"
-      >
-        Fale com Orion
-      </a>
-    </div>
+  import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
+  import { auth } from '$lib/firebase';
+  import { goto } from '$app/navigation';
+
+  let loading = true;
+
+  onMount(() => {
+    if (browser) {
+      // Observa mudanças no estado de autenticação
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        if (user) {
+          goto('/hub');
+        } else {
+          goto('/login');
+        }
+        loading = false;
+      });
+
+      return unsubscribe;
+    }
+  });
+</script>
+
+{#if loading}
+<div class="min-h-screen bg-black flex items-center justify-center">
+  <div class="text-white text-center">
+    <div class="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full mx-auto mb-4"></div>
+    <p>Carregando...</p>
   </div>
+</div>
+{/if}
   

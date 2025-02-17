@@ -14,6 +14,13 @@
   let stars;
 
   onMount(() => {
+    // Verifica se já está autenticado
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        goto('/hub');
+      }
+    });
+
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -150,6 +157,7 @@
     window.addEventListener('resize', handleResize);
 
     return () => {
+      unsubscribe();
       window.removeEventListener('resize', handleResize);
       container.removeChild(renderer.domElement);
     };
@@ -280,6 +288,35 @@
       loading = false;
     }
   }
+
+  let email = '';
+  let password = '';
+
+  onMount(() => {
+    // Verificar se já está autenticado
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        goto('/hub');
+      }
+    });
+
+    return unsubscribe;
+  });
+
+  async function handleLogin() {
+    error = '';
+    loading = true;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      goto('/hub');
+    } catch (err) {
+      console.error('Erro no login:', err);
+      error = 'Email ou senha inválidos';
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
 <div class="relative w-full h-screen bg-black">
@@ -295,7 +332,7 @@
         </div>
       {/if}
 
-      <form class="space-y-4" on:submit={handleSubmit}>
+      <form class="space-y-4" on:submit={handleLogin}>
         <div>
           <label for="email" class="block text-sm font-medium text-gray-200">Email</label>
           <input
@@ -304,6 +341,7 @@
             name="email"
             class="w-full px-3 py-2 mt-1 text-white bg-black/50 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50"
             placeholder="seu@email.com"
+            bind:value={email}
           />
         </div>
         <div>
@@ -314,6 +352,7 @@
             name="password"
             class="w-full px-3 py-2 mt-1 text-white bg-black/50 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50"
             placeholder="********"
+            bind:value={password}
           />
         </div>
         <button

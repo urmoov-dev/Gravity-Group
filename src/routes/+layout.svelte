@@ -1,10 +1,10 @@
 <script>
 	import '../app.css'; // Importação obrigatória para estilo global
+	import OrionChat from '$lib/components/OrionChat.svelte';
+	import { page } from '$app/stores';
   
 	let links = [
-	  { name: "Home", href: "/" },
 	  { name: "Login", href: "/login" },
-	  { name: "Orion", href: "/orion" },
 	  { name: "Marketplace", href: "/marketplace" },
 	  { name: "Contato", href: "/contato" },
 	];
@@ -17,6 +17,7 @@
   </script>
   
   <div class="bg-gradient-to-b from-black via-gray-800 to-gray-900 text-white min-h-screen flex flex-col">
+	{#if $page.url.pathname !== '/'}
 	<!-- Header -->
 	<header class="bg-black py-4 shadow-lg">
 	  <div class="container mx-auto flex justify-between items-center px-4">
@@ -49,18 +50,23 @@
 		</nav>
 	  </div>
 	{/if}
+	{/if}
   
 	<!-- Main Content -->
 	<main class="flex-grow">
 	  <slot />
 	</main>
   
+	{#if $page.url.pathname !== '/'}
 	<!-- Footer -->
 	<footer class="bg-black py-4">
 	  <div class="container mx-auto text-center px-4">
 		<p class="text-sm text-gray-400">© 2025 Gravity Group - Todos os direitos reservados</p>
 	  </div>
 	</footer>
+
+	<OrionChat />
+	{/if}
   </div>
   
   <style>
