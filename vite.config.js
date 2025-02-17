@@ -12,10 +12,10 @@ export default defineConfig({
     minify: 'esbuild'
   },
   ssr: {
-    noExternal: ['three', 'apexcharts', 'chart.js', 'firebase']
+    noExternal: ['three', 'apexcharts', 'chart.js', 'firebase', 'openai']
   },
   optimizeDeps: {
-    include: ['firebase/auth', 'firebase/app'],
+    include: ['firebase/auth', 'firebase/app', 'openai'],
     exclude: ['@sveltejs/kit']
   }
 });
