@@ -70,4 +70,4 @@
   });
 </script>
 
-<div bind:this={container} class="fixed top-0 left-0 w-full h-full -z-10" /> 
+<div bind:this={container} class="fixed top-0 left-0 w-full h-full -z-10"></div> 
