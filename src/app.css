@@ -1,8 +1,8 @@
-/* @ts-ignore */
+/* postcss-ignore-next-line */
 @tailwind base;
-/* @ts-ignore */
+/* postcss-ignore-next-line */
 @tailwind components;
-/* @ts-ignore */
+/* postcss-ignore-next-line */
 @tailwind utilities;
 
 body {

@@ -304,7 +304,7 @@
         yaxis: {
           labels: {
             show: true,
-            formatter: (value) => formatCurrency(value),
+            formatter: (value: number) => formatCurrency(value),
             style: {
               colors: 'rgba(255, 255, 255, 0.6)'
             }
@@ -313,7 +313,7 @@
         tooltip: {
           theme: 'dark',
           y: {
-            formatter: (value) => formatCurrency(value)
+            formatter: (value: number) => formatCurrency(value)
           },
           x: {
             show: true
@@ -328,6 +328,8 @@
             const value = series[seriesIndex][dataPointIndex];
             const parceiros = selectedInvestments.map(partner => {
               const inv = investments.find(i => i.partner === partner);
+              if (!inv) return { name: partner, value: 0 };
+              
               const returnData = inv.returns.find(r => r.date === date);
               return {
                 name: partner,
@@ -465,6 +467,11 @@
       orionComment: 'O setor de tecnologia mostra forte potencial de valorização nos próximos anos.'
     }
   ];
+
+  // Adicionar tipos para os formatters
+  function formatCurrencyValue(value: number): string {
+    return formatCurrency(value);
+  }
 </script>
 
 {#if loading}

@@ -91,6 +91,8 @@
       canvas.height = 32;
       const ctx = canvas.getContext('2d');
       
+      if (!ctx) return new THREE.Texture();
+      
       const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
       gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
       gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
@@ -173,7 +175,7 @@
       const elapsed = currentTime - start;
       const progress = Math.min(elapsed / duration, 1);
       
-      const easing = t => {
+      const easing = (t: number) => {
         if (t < 0.3) {
           return t * t * t;
         } else if (t < 0.7) {
@@ -250,7 +252,7 @@
     return -t * (t - 2);
   }
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     loading = true;
     error = '';
@@ -261,9 +263,9 @@
 
     const formData = new FormData(event.target as HTMLFormElement);
     const email = formData.get('email');
-    if (typeof email === 'string') {
-      const password = formData.get('password');
+    const password = formData.get('password');
 
+    if (typeof email === 'string' && typeof password === 'string') {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         
@@ -271,8 +273,12 @@
           // Redireciona imediatamente após o login bem-sucedido
           goto('/hub');
         }
-      } catch (e) {
-        error = e.message;
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          error = e.message;
+        } else {
+          error = 'Erro desconhecido';
+        }
         globeGroup.position.y = -12;
       } finally {
         loading = false;
@@ -296,8 +302,12 @@
         // Redireciona imediatamente após o login bem-sucedido
         goto('/hub');
       }
-    } catch (e) {
-      error = e.message;
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        error = e.message;
+      } else {
+        error = 'Erro desconhecido';
+      }
       globeGroup.position.y = -16;
     } finally {
       loading = false;

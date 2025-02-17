@@ -111,6 +111,10 @@
     }).format(value);
   }
 
+  function formatPercentage(value: number): string {
+    return `${value.toFixed(2)}%`;
+  }
+
   function initializeCharts() {
     if (!browser) return;
     
