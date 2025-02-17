@@ -5,12 +5,13 @@
 	"type": "module",
 	"scripts": {
 		"dev": "npx vite dev",
-		"build": "npx vite build",
+		"build": "vite build",
 		"preview": "npx vite preview",
-		"prepare": "svelte-kit sync"
+		"prepare": "svelte-kit sync",
+		"vercel-build": "npm run build"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-vercel": "^3.0.0",
+		"@sveltejs/adapter-vercel": "^3.1.0",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@tailwindcss/forms": "^0.5.10",
