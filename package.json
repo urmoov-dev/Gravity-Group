@@ -37,12 +37,13 @@
 	"dependencies": {
 		"dotenv": "^16.4.7",
 		"encoding": "^0.1.13",
+		"jsonwebtoken": "^9.0.2",
 		"node-fetch": "^3.3.2",
 		"openai": "^4.82.0",
-		"pnpm": "^9.15.4"
+		"pnpm": "^9.15.4",
+		"three": "^0.173.0"
 	},
 	"engines": {
-  "node": "22.x"
+		"node": ">=18.17.0"
 	}
-
 }
