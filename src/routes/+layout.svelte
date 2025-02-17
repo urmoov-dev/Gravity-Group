@@ -25,6 +25,12 @@
 		console.error('Erro ao fazer logout:', error);
 	  }
 	};
+
+	// Função para navegar entre páginas
+	const handleNavigation = (path: string) => {
+	  menuVisible = false; // Fecha o menu mobile se estiver aberto
+	  goto(path);
+	};
 </script>
   
 <div class="bg-gradient-to-b from-black via-gray-800 to-gray-900 text-white min-h-screen flex flex-col">
@@ -32,13 +38,25 @@
 	<!-- Header -->
 	<header class="sticky top-0 z-50 bg-black/80 backdrop-blur-sm border-b border-white/10">
 	  <div class="container mx-auto flex justify-between items-center px-4 h-16">
-		<h1 class="text-3xl font-bold text-green-500">Gravity Group</h1>
+		<div class="flex items-center space-x-0">
+		  <img 
+			src="/images/Logo-Gravity.png"
+			alt="Gravity Group Logo" 
+			class="h-16 w-auto"
+		  />
+		  <h1 class="text-3xl font-bold text-white">Gravity Group</h1>
+		</div>
 		
 		<div class="hidden md:flex items-center space-x-6">
 		  <!-- Links de navegação -->
 		  <nav class="flex space-x-6">
 			{#each menuItems as item}
-			  <a href={item.href} class="hover:text-green-500 transition">{item.label}</a>
+			  <button 
+				on:click={() => handleNavigation(item.href)}
+				class="hover:text-green-500 transition {$page.url.pathname === item.href ? 'text-green-500' : ''}"
+			  >
+				{item.label}
+			  </button>
 			{/each}
 		  </nav>
 
@@ -84,7 +102,12 @@
 	  <div id="mobile-menu" class="md:hidden bg-gray-800">
 		<nav class="flex flex-col items-start space-y-2 p-4">
 		  {#each menuItems as item}
-			<a href={item.href} class="hover:text-green-500 transition">{item.label}</a>
+			<button 
+			  on:click={() => handleNavigation(item.href)}
+			  class="hover:text-green-500 transition {$page.url.pathname === item.href ? 'text-green-500' : ''}"
+			>
+			  {item.label}
+			</button>
 		  {/each}
 		  
 		  <!-- Perfil e botão de sair para mobile -->
