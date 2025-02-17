@@ -5,46 +5,75 @@
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
     background: rgb(17, 24, 39);
     font-family: 'Arial', sans-serif;
-  }
-  
-  /* Estilização da scrollbar para tema escuro */
-  ::-webkit-scrollbar {
+    overflow-y: auto !important;
+}
+
+/* Estilização da scrollbar para tema escuro */
+::-webkit-scrollbar {
     width: 10px;
     height: 10px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 5px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 5px;
-    border: 2px solid rgba(255, 255, 255, 0.05);
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
+    border-radius: 4px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
-  }
-  
-  /* Para Firefox */
-  * {
+}
+
+/* Para Firefox */
+* {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.05);
-  }
-  
-  a {
+    scrollbar-color: rgba(255, 255, 255, 0.1) rgba(0, 0, 0, 0.3);
+}
+
+/* Esconder scrollbar apenas para elementos com a classe scrollbar-none */
+.scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+
+/* Estilização específica para o chat do Orion */
+.orion-chat-messages::-webkit-scrollbar {
+    width: 6px;
+}
+
+.orion-chat-messages::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.orion-chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(34, 197, 94, 0.3);
+    border-radius: 3px;
+}
+
+.orion-chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(34, 197, 94, 0.4);
+}
+
+/* Estilos base */
+a {
     text-decoration: none;
     color: inherit;
-  }
-  
-  .container {
+}
+
+.container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
-  }
+}
   
