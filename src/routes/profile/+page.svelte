@@ -153,7 +153,7 @@
       },
       yaxis: {
         labels: {
-          formatter: (value) => formatCurrency(value),
+          formatter: (value: number) => formatCurrency(value),
           style: { colors: 'rgba(255, 255, 255, 0.6)' }
         }
       },
@@ -161,7 +161,7 @@
       tooltip: {
         theme: 'dark',
         y: {
-          formatter: (value) => formatCurrency(value)
+          formatter: (value: number) => formatCurrency(value)
         }
       }
     };

@@ -9,7 +9,7 @@
   let loading = false;
   let error = '';
 
-  let container: HTMLElement;
+  let container: Element;
   let globeGroup: THREE.Group;
   let stars: THREE.Points;
 

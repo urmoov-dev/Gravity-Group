@@ -838,51 +838,12 @@
 {/if}
 
 <style>
-  :global(body) {
-    background: black;
-    overflow-y: auto;
-  }
-
-  /* Transições suavizadas */
-  .group:hover .group-hover\:opacity-100 {
-    transition-delay: 50ms;
-  }
-
-  .group:hover .group-hover\:scale-110 {
-    transition: all 700ms ease-out;
-  }
-
-  .group:hover .group-hover\:bg-opacity-10 {
-    transition: all 300ms ease-in-out;
-  }
-
-  .group:hover .group-hover\:border-gray-600\/20 {
-    transition: all 300ms ease-in-out;
-  }
-
-  /* Esconder scrollbar mas manter funcionalidade */
+  /* Manter apenas os estilos que estão sendo usados */
   .scrollbar-none {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
-  }
-
-  /* Efeito de brilho para os logos */
-  .logo-glow {
-    filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.2));
-  }
-
-  /* Animação suave para o gradiente */
-  @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  .gradient-animate {
-    background-size: 200% 200%;
-    animation: gradient-shift 3s ease infinite;
   }
 </style> 
