@@ -23,17 +23,17 @@
     {
       partner: 'Dominion',
       initialAmount: 750000,
-      currentAmount: 892500,
+      currentAmount: 1012500,
       startDate: '2023-06-15',
       returns: [
-        { date: '2023-07', value: 765000 },
-        { date: '2023-08', value: 788000 },
-        { date: '2023-09', value: 812000 },
-        { date: '2023-10', value: 845000 },
-        { date: '2023-11', value: 870000 },
-        { date: '2023-12', value: 892500 }
+        { date: '2023-07', value: 780000 },
+        { date: '2023-08', value: 825000 },
+        { date: '2023-09', value: 870000 },
+        { date: '2023-10', value: 930000 },
+        { date: '2023-11', value: 975000 },
+        { date: '2023-12', value: 1012500 }
       ],
-      roi: 19,
+      roi: 35,
       term: '36 meses',
       nextPayment: '2024-02-15',
       risk: 'Moderado',
@@ -42,23 +42,78 @@
     {
       partner: 'Fictor',
       initialAmount: 600000,
-      currentAmount: 756000,
+      currentAmount: 900000,
       startDate: '2023-05-20',
       returns: [
-        { date: '2023-07', value: 618000 },
-        { date: '2023-08', value: 642000 },
-        { date: '2023-09', value: 678000 },
-        { date: '2023-10', value: 708000 },
-        { date: '2023-11', value: 732000 },
-        { date: '2023-12', value: 756000 }
+        { date: '2023-07', value: 660000 },
+        { date: '2023-08', value: 720000 },
+        { date: '2023-09', value: 780000 },
+        { date: '2023-10', value: 840000 },
+        { date: '2023-11', value: 870000 },
+        { date: '2023-12', value: 900000 }
       ],
-      roi: 26,
+      roi: 50,
       term: '48 meses',
       nextPayment: '2024-02-20',
       risk: 'Alto',
       category: 'Private Equity'
     },
-    // ... outros parceiros
+    // Adicionar Hurst
+    {
+      partner: 'Hurst',
+      initialAmount: 500000,
+      currentAmount: 800000,
+      startDate: '2023-08-01',
+      returns: [
+        { date: '2023-09', value: 575000 },
+        { date: '2023-10', value: 650000 },
+        { date: '2023-11', value: 725000 },
+        { date: '2023-12', value: 800000 }
+      ],
+      roi: 60,
+      term: '36 meses',
+      nextPayment: '2024-02-10',
+      risk: 'Alto',
+      category: 'Ativos Alternativos'
+    },
+    // Adicionar Ademicon
+    {
+      partner: 'Ademicon',
+      initialAmount: 450000,
+      currentAmount: 540000,
+      startDate: '2023-07-15',
+      returns: [
+        { date: '2023-08', value: 465000 },
+        { date: '2023-09', value: 480000 },
+        { date: '2023-10', value: 495000 },
+        { date: '2023-11', value: 515000 },
+        { date: '2023-12', value: 540000 }
+      ],
+      roi: 20,
+      term: '60 meses',
+      nextPayment: '2024-02-15',
+      risk: 'Moderado',
+      category: 'Consórcios Estruturados'
+    },
+    // Novo investimento XP
+    {
+      partner: 'XP Investimentos',
+      initialAmount: 800000,
+      currentAmount: 1120000,
+      startDate: '2023-07-01',
+      returns: [
+        { date: '2023-08', value: 880000 },
+        { date: '2023-09', value: 960000 },
+        { date: '2023-10', value: 1040000 },
+        { date: '2023-11', value: 1080000 },
+        { date: '2023-12', value: 1120000 }
+      ],
+      roi: 40,
+      term: '24 meses',
+      nextPayment: '2024-02-01',
+      risk: 'Moderado',
+      category: 'Fundos de Investimento'
+    }
   ];
 
   let selectedInvestments = investments.map(inv => inv.partner); // Inicialmente todos selecionados
@@ -91,6 +146,13 @@
       description: 'Maior administradora independente de consórcio do Brasil.',
       highlight: 'Mais de R$ 120.9Bi em créditos comercializados',
       url: 'https://ademicon.com.br'
+    },
+    {
+      name: 'XP Investimentos',
+      logo: '/images/partners/xp-logo.png',
+      description: 'Maior plataforma de investimentos do Brasil, oferecendo uma ampla gama de produtos financeiros.',
+      highlight: 'Mais de R$ 1 Trilhão sob custódia',
+      url: 'https://xp.com.br'
     }
   ];
 
@@ -99,21 +161,23 @@
     // Pegar todas as datas únicas
     const allDates = [...new Set(investments.flatMap(inv => inv.returns.map(r => r.date)))].sort();
     
-    // Criar série de dados para cada investimento selecionado
-    const series = selectedInvestments.map(partnerName => {
-      const investment = investments.find(inv => inv.partner === partnerName);
-      return {
-        name: partnerName,
-        data: allDates.map(date => {
-          const returnData = investment.returns.find(r => r.date === date);
-          return returnData ? returnData.value : null;
-        })
-      };
+    // Criar um único array de dados somando os valores dos investimentos selecionados
+    const aggregatedData = allDates.map(date => {
+      const sum = selectedInvestments.reduce((total, partnerName) => {
+        const investment = investments.find(inv => inv.partner === partnerName);
+        const returnData = investment?.returns.find(r => r.date === date);
+        return total + (returnData?.value || 0);
+      }, 0);
+      return sum;
     });
-    
+
+    // Retornar uma única série com os dados agregados
     return {
       dates: allDates,
-      series
+      series: [{
+        name: `Total Investido (${selectedInvestments.length} parceiros)`,
+        data: aggregatedData
+      }]
     };
   }
 
@@ -126,8 +190,15 @@
     }
   }
 
+  // Observar mudanças na aba ativa
+  $: if (activeTab === 'dashboard' && browser && !loadingCharts) {
+    if (!initialized) {
+      initializeCharts();
+    }
+  }
+
   // Observar mudanças na seleção de investimentos
-  $: if (selectedInvestments && browser) {
+  $: if (selectedInvestments && browser && activeTab === 'dashboard') {
     if (selectedInvestments.length > 0) {
       initialized = false; // Forçar reinicialização
       initializeCharts();
@@ -142,12 +213,13 @@
     charts.forEach(chart => chart.destroy());
     charts = [];
 
-    const { dates, series } = getAggregatedData();
-    
+    // Pequeno delay para garantir que o elemento existe no DOM
     setTimeout(() => {
       const element = document.querySelector('#aggregated-chart');
       if (!element) return;
 
+      const { dates, series } = getAggregatedData();
+      
       const options = {
         series,
         chart: {
@@ -240,6 +312,35 @@
           theme: 'dark',
           y: {
             formatter: (value) => formatCurrency(value)
+          },
+          x: {
+            show: true
+          },
+          custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+            const date = w.globals.categoryLabels[dataPointIndex];
+            const value = series[seriesIndex][dataPointIndex];
+            const parceiros = selectedInvestments.map(partner => {
+              const inv = investments.find(i => i.partner === partner);
+              const returnData = inv.returns.find(r => r.date === date);
+              return {
+                name: partner,
+                value: returnData?.value || 0
+              };
+            });
+
+            return `
+              <div class="p-3 bg-gray-900 rounded-lg shadow-lg">
+                <div class="font-bold text-white mb-2">${date}</div>
+                <div class="text-green-400 font-bold mb-2">${formatCurrency(value)}</div>
+                <div class="text-xs text-gray-400">Composição:</div>
+                ${parceiros.map(p => `
+                  <div class="flex justify-between text-xs">
+                    <span class="text-gray-300">${p.name}:</span>
+                    <span class="text-green-400 ml-4">${formatCurrency(p.value)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
           }
         }
       };
@@ -248,6 +349,7 @@
         const chart = new ApexCharts(element, options);
         chart.render();
         charts.push(chart);
+        initialized = true;
       } catch (error) {
         console.error('Erro ao renderizar gráfico:', error);
       }
@@ -319,7 +421,8 @@
       'Dominion': 'adominion-logo.png',
       'Fictor': 'fictor-logo.jpg',
       'Hurst': 'hurst-logo.png',
-      'Ademicon': 'ademicon-logo.png'
+      'Ademicon': 'ademicon-logo.png',
+      'XP Investimentos': 'xp-logo.png'
     };
     return `/images/partners/${logoMap[partnerName]}`;
   }
@@ -482,15 +585,37 @@
                   on:click={() => toggleInvestmentSelection(investment.partner)}
                 >
                   <div class="flex items-center space-x-2">
-                    <img 
-                      src={getPartnerLogo(investment.partner)}
-                      alt={investment.partner}
-                      class="w-6 h-6 object-cover rounded-full"
-                    >
+                    <div class="relative group">
+                      <div class="w-6 h-6 rounded-full overflow-hidden border {selectedInvestments.includes(investment.partner) 
+                        ? 'border-green-500/30' 
+                        : 'border-white/10'}">
+                        <img 
+                          src={getPartnerLogo(investment.partner)}
+                          alt={investment.partner}
+                          class="w-full h-full object-cover"
+                        >
+                      </div>
+                    </div>
                     <span>{investment.partner}</span>
                   </div>
                 </button>
               {/each}
+            </div>
+
+            <!-- Adicione um botão para selecionar/deselecionar todos -->
+            <div class="mt-2">
+              <button
+                class="text-sm text-gray-400 hover:text-white transition-colors"
+                on:click={() => {
+                  if (selectedInvestments.length === investments.length) {
+                    selectedInvestments = [];
+                  } else {
+                    selectedInvestments = investments.map(inv => inv.partner);
+                  }
+                }}
+              >
+                {selectedInvestments.length === investments.length ? 'Desmarcar todos' : 'Selecionar todos'}
+              </button>
             </div>
 
             <!-- Gráfico agregado -->
@@ -597,12 +722,16 @@
             {#each partnerships as partner}
               <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6">
                 <div class="flex items-start space-x-6">
-                  <div class="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center p-4">
-                    <img 
-                      src={partner.logo} 
-                      alt={partner.name}
-                      class="w-full h-full object-contain"
-                    >
+                  <!-- Logo atualizado para ser redondo -->
+                  <div class="relative group">
+                    <div class="absolute -inset-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-full opacity-0 group-hover:opacity-20 transition-all duration-300 -z-10"></div>
+                    <div class="relative w-20 h-20 bg-gradient-to-br from-gray-900 to-black rounded-full border border-white/10 shadow-lg transform group-hover:scale-105 transition-all duration-300 overflow-hidden">
+                      <img 
+                        src={partner.logo} 
+                        alt={partner.name}
+                        class="w-full h-full object-cover"
+                      >
+                    </div>
                   </div>
                   <div class="flex-1">
                     <h3 class="text-xl font-semibold mb-2">{partner.name}</h3>
