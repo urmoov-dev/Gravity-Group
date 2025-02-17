@@ -1,24 +1,23 @@
-import OPENAI from 'openai';
-import {OPENAI_API_KEY} from "$env/static/private"
+import OpenAI from 'openai';
+import { OPENAI_API_KEY } from '$env/static/private';
 
-
-const openai = new OPENAI({
-  apiKey: OPENAI_API_KEY, // Usando process.env diretamente
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY
 });
 
 export async function POST({ request }) {
-  const { prompt } = await request.json();
-
-  if (!prompt) {
-    return new Response(JSON.stringify({ error: "Prompt is required" }), {
-      status: 400,
-    });
-  }
-
   try {
+    const { message } = await request.json();
+
+    if (!message) {
+      return new Response(JSON.stringify({ error: "Prompt is required" }), {
+        status: 400,
+      });
+    }
+
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: message }],
       max_tokens: 300,
     });
 
