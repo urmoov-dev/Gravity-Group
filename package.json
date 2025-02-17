@@ -35,12 +35,15 @@
 		"vite": "^6.0.0"
 	},
 	"dependencies": {
+		"chart.js": "^4.4.1",
 		"dotenv": "^16.4.7",
 		"encoding": "^0.1.13",
+		"firebase": "^11.3.1",
 		"jsonwebtoken": "^9.0.2",
 		"node-fetch": "^3.3.2",
 		"openai": "^4.82.0",
 		"pnpm": "^9.15.4",
+		"svelte-chartjs": "^3.1.2",
 		"three": "^0.173.0"
 	},
 	"engines": {
