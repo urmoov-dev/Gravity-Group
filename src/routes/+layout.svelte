@@ -10,6 +10,7 @@
   
 	const menuItems = [
 	  { href: '/hub', label: 'Hub' },
+	  { href: '/hub2', label: 'Hub 2.0' },
 	  { href: '/profile', label: 'Perfil' }
 	];
   

@@ -193,7 +193,7 @@
       globeGroup.position.y = originalY + (targetY - originalY) * currentProgress;
       globeGroup.rotation.y += 0.003 + (currentProgress * 0.01);
       
-      const positions = stars.geometry.attributes.position.array;
+      const positions = (stars.geometry as THREE.BufferGeometry).getAttribute('position').array;
       const centerY = globeGroup.position.y;
       
       const intensityMultiplier = progress < 0.3 
@@ -232,7 +232,7 @@
         positions[i + 2] -= dz * force * speedMultiplier;
       }
       
-      stars.geometry.attributes.position.needsUpdate = true;
+      (stars.geometry as THREE.BufferGeometry).getAttribute('position').needsUpdate = true;
 
       if (progress < 1) {
         requestAnimationFrame(attractionAnimation);
@@ -269,8 +269,8 @@
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         if (userCredential.user) {
             // Definir cookie de sessão e redirecionar
-            document.cookie = `session=${await userCredential.user.getIdToken()}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
-            window.location.replace('/terms-of-service');
+            await setSessionCookie();
+            window.location.replace('/hub2');
         }
     } catch (e: unknown) {
         if (e instanceof Error) {
@@ -298,8 +298,8 @@
         
         if (result.user) {
             // Definir cookie de sessão e redirecionar
-            document.cookie = `session=${await result.user.getIdToken()}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
-            window.location.replace('/terms-of-service');
+            await setSessionCookie();
+            window.location.replace('/hub2');
         }
     } catch (e: unknown) {
         if (e instanceof Error) {
