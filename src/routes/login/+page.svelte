@@ -5,6 +5,7 @@
   import { auth } from '$lib/firebase';
   import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
   import { goto } from '$app/navigation';
+  import { setSessionCookie } from '$lib/session';
   
   let loading = false;
   let error = '';
@@ -252,6 +253,9 @@
     return -t * (t - 2);
   }
 
+  let email = '';
+  let password = '';
+
   async function handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     loading = true;
@@ -261,28 +265,22 @@
     const animation = handleAnimation(globeGroup.position.y, -5);
     requestAnimationFrame(animation);
 
-    const formData = new FormData(event.target as HTMLFormElement);
-    const email = formData.get('email');
-    const password = formData.get('password');
-
-    if (typeof email === 'string' && typeof password === 'string') {
-      try {
+    try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        
         if (userCredential.user) {
-          // Redireciona imediatamente após o login bem-sucedido
-          goto('/hub');
+            // Definir cookie de sessão e redirecionar
+            document.cookie = `session=${await userCredential.user.getIdToken()}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+            window.location.replace('/terms-of-service');
         }
-      } catch (e: unknown) {
+    } catch (e: unknown) {
         if (e instanceof Error) {
-          error = e.message;
+            error = e.message;
         } else {
-          error = 'Erro desconhecido';
+            error = 'Erro desconhecido';
         }
         globeGroup.position.y = -12;
-      } finally {
+    } finally {
         loading = false;
-      }
     }
   }
 
@@ -295,51 +293,23 @@
     requestAnimationFrame(animation);
 
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      
-      if (result.user) {
-        // Redireciona imediatamente após o login bem-sucedido
-        goto('/hub');
-      }
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        
+        if (result.user) {
+            // Definir cookie de sessão e redirecionar
+            document.cookie = `session=${await result.user.getIdToken()}; path=/; max-age=${60 * 60 * 24}; samesite=lax`;
+            window.location.replace('/terms-of-service');
+        }
     } catch (e: unknown) {
-      if (e instanceof Error) {
-        error = e.message;
-      } else {
-        error = 'Erro desconhecido';
-      }
-      globeGroup.position.y = -16;
+        if (e instanceof Error) {
+            error = e.message;
+        } else {
+            error = 'Erro desconhecido';
+        }
+        globeGroup.position.y = -16;
     } finally {
-      loading = false;
-    }
-  }
-
-  let email = '';
-  let password = '';
-
-  onMount(() => {
-    // Verificar se já está autenticado
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        goto('/hub');
-      }
-    });
-
-    return unsubscribe;
-  });
-
-  async function handleLogin() {
-    error = '';
-    loading = true;
-
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      goto('/hub');
-    } catch (err) {
-      console.error('Erro no login:', err);
-      error = 'Email ou senha inválidos';
-    } finally {
-      loading = false;
+        loading = false;
     }
   }
 </script>
@@ -357,7 +327,7 @@
         </div>
       {/if}
 
-      <form class="space-y-4" on:submit={handleLogin}>
+      <form class="space-y-4" on:submit={handleSubmit}>
         <div>
           <label for="email" class="block text-sm font-medium text-gray-200">Email</label>
           <input
@@ -383,19 +353,9 @@
         <button
           type="submit"
           disabled={loading}
-          class="w-full px-4 py-2 text-black bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transition-colors"
+          class="w-full px-4 py-2 text-black bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transition-colors disabled:opacity-50"
         >
-          {#if loading}
-            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-              <svg class="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-            Entrando...
-          {:else}
-            Entrar
-          {/if}
+          {loading ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
 

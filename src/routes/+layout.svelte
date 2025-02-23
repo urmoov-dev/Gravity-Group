@@ -5,6 +5,8 @@
 	import { auth } from '$lib/firebase';
 	import { signOut } from 'firebase/auth';
 	import { goto } from '$app/navigation';
+	import { clearSessionCookie } from '$lib/session';
+	import { user } from '$lib/stores/auth';
   
 	const menuItems = [
 	  { href: '/hub', label: 'Hub' },
@@ -20,6 +22,7 @@
 	const handleSignOut = async () => {
 	  try {
 		await signOut(auth);
+		clearSessionCookie();
 		goto('/login');
 	  } catch (error) {
 		console.error('Erro ao fazer logout:', error);
@@ -61,18 +64,16 @@
 		  </nav>
 
 		  <!-- Perfil e botão de sair (apenas se estiver logado) -->
-		  {#if auth.currentUser}
+		  {#if $user}
 			<div class="flex items-center space-x-4">
 			  <a 
 				href="/profile" 
 				class="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
 			  >
-				{#if auth.currentUser?.email}
-				  <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-					{auth.currentUser.email[0].toUpperCase()}
-				  </div>
-				  <span>{auth.currentUser.email}</span>
-				{/if}
+				<div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
+				  {$user.email?.[0].toUpperCase() ?? 'U'}
+				</div>
+				<span>{$user.email}</span>
 			  </a>
 			  <button 
 				on:click={handleSignOut}
@@ -111,18 +112,16 @@
 		  {/each}
 		  
 		  <!-- Perfil e botão de sair para mobile -->
-		  {#if auth.currentUser}
+		  {#if $user}
 			<div class="flex flex-col space-y-2 w-full pt-2 border-t border-gray-700">
 			  <a 
 				href="/profile"
 				class="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
 			  >
-				{#if auth.currentUser?.email}
-				  <div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-					{auth.currentUser.email[0].toUpperCase()}
-				  </div>
-				  <span>{auth.currentUser.email}</span>
-				{/if}
+				<div class="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
+				  {$user.email?.[0].toUpperCase() ?? 'U'}
+				</div>
+				<span>{$user.email}</span>
 			  </a>
 			  <button 
 				on:click={handleSignOut}
