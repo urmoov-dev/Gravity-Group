@@ -7,8 +7,8 @@
   import type { User } from 'firebase/auth';
   import { investmentLevels } from '$lib/types/profile';
   import type { InvestmentLevel } from '$lib/types/profile';
+  import { user } from '$lib/stores/auth';
 
-  let user: User | null = null;
   let loading = true;
   let charts: ApexCharts[] = [];
   let currentValue = 750000; // Exemplo - isso viria do banco de dados
@@ -223,7 +223,6 @@
       if (!currentUser) {
         goto('/login');
       } else {
-        user = currentUser;
         loading = false;
         initializeCharts(); // Chama diretamente aqui
       }
@@ -250,6 +249,10 @@
     } else {
       progress = 100;
     }
+  }
+
+  function viewTerms() {
+    goto('/terms-history');
   }
 </script>
 
@@ -283,14 +286,48 @@
           </div>
           <div>
             <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              {user?.displayName || 'Investidor'}
+              {$user?.email?.split('@')[0] || 'Investidor'}
             </h1>
-            <p class="text-gray-400">{user?.email}</p>
+            <p class="text-gray-400">{$user?.email}</p>
             <div class="mt-2">
               <span class="px-4 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full text-sm border border-white/10 flex items-center space-x-2 w-fit">
                 <span class="text-lg">{currentLevel.icon}</span>
                 <span>{currentLevel.name}</span>
               </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Documentos e Termos -->
+      <div class="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-xl p-6 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-20">
+          <div class="stars"></div>
+        </div>
+        <div class="relative z-10">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Documentos
+              </h2>
+              <p class="text-sm text-gray-400">Seus documentos e termos aceitos</p>
+            </div>
+            <button
+              on:click={viewTerms}
+              class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black"
+            >
+              Visualizar Termos de Serviço
+            </button>
+          </div>
+          <div class="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-white/10">
+            <div class="flex items-center space-x-3">
+              <div class="text-green-500 text-xl">✓</div>
+              <div>
+                <h3 class="font-medium text-white">Termos de Serviço</h3>
+                <p class="text-sm text-gray-400">
+                  Aceito em: {document.cookie.includes('terms_accepted=true') ? new Date().toLocaleDateString('pt-BR') : 'Não aceito'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -435,6 +472,8 @@
   }
 
   :global(body) {
+    margin: 0;
+    overflow-x: hidden;
     background: black;
     background-image: 
       radial-gradient(circle at center, #1a1a3a 0%, #000000 100%);
