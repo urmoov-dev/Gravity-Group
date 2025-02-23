@@ -1,10 +1,12 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = async ({ cookies }) => {
+export const POST: RequestHandler = async ({ cookies, request }) => {
     try {
-        // Aqui você pode adicionar a lógica para salvar o aceite dos termos no banco de dados
-        // Por enquanto, vamos apenas definir um cookie
+        const { version } = await request.json();
+        const acceptanceDate = new Date().toISOString();
+        
+        // Salvar o aceite com a versão e data
         cookies.set('terms_accepted', 'true', {
             path: '/',
             maxAge: 60 * 60 * 24 * 365, // 1 ano
@@ -13,7 +15,23 @@ export const POST: RequestHandler = async ({ cookies }) => {
             sameSite: 'lax' // Mais permissivo que 'strict'
         });
 
-        return json({ success: true });
+        cookies.set('terms_version', version, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 365,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax'
+        });
+
+        cookies.set('terms_acceptance_date', acceptanceDate, {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 365,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax'
+        });
+
+        return json({ success: true, version, acceptanceDate });
     } catch (error) {
         console.error('Erro ao processar aceite dos termos:', error);
         return json({ error: 'Erro ao processar aceite dos termos' }, { status: 500 });

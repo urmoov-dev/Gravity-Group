@@ -21,7 +21,9 @@
             status: 'atual',
             titulo: 'Termos de Serviço - Atualização 2024',
             descricao: 'Versão atual dos termos, incluindo novas políticas de investimento e segurança.',
-            dataAceite: document.cookie.includes('terms_accepted=true') ? new Date().toLocaleDateString('pt-BR') : undefined
+            dataAceite: document.cookie.includes('terms_accepted=true') 
+                ? new Date(decodeURIComponent(document.cookie.split('terms_acceptance_date=')[1]?.split(';')[0] || '')).toLocaleDateString('pt-BR')
+                : undefined
         },
         {
             id: 'v3-2024',
@@ -33,8 +35,14 @@
         }
     ];
 
-    function viewTerms() {
-        goto('/terms-of-service');
+    function viewTerms(termoId: string) {
+        // Se for a versão aceita, mostrar na página de termos aceitos
+        if (document.cookie.includes('terms_version=' + termoId)) {
+            goto('/terms-accepted');
+        } else {
+            // Se for outra versão, mostrar na página de termos normal
+            goto(`/terms-of-service?version=${termoId}&view=true`);
+        }
     }
 
     function formatDate(date: string): string {
@@ -82,7 +90,7 @@
                                     </span>
                                 {/if}
                                 <button
-                                    on:click={viewTerms}
+                                    on:click={() => viewTerms(termo.id)}
                                     class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
                                 >
                                     Visualizar
