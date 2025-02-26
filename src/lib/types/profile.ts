@@ -155,4 +155,114 @@ export const investmentLevels: InvestmentLevel[] = [
     description: 'O ápice do universo Gravity Group.',
     nextGoal: 'Você alcançou o nível máximo!'
   }
+];
+
+export interface AstronomicalLevel {
+    id: number;
+    name: string;
+    icon: string;
+    requiredAmount: number;
+    mass: string;
+    description: string;
+    mission: string;
+}
+
+export interface UserProfile {
+    currentAmount: number;
+    currentLevel: AstronomicalLevel;
+    nextLevel: AstronomicalLevel | null;
+    progressToNext: number;
+}
+
+export const ASTRONOMICAL_LEVELS: AstronomicalLevel[] = [
+    {
+        id: 0,
+        name: "Terra",
+        icon: "🌍",
+        requiredAmount: 0,
+        mass: "5,97 × 10²⁴ kg",
+        description: "Você está no berço da humanidade, um pequeno planeta azul. Aqui começam todos os investidores antes de expandirem sua influência financeira.",
+        mission: "Iniciar sua jornada de investimentos."
+    },
+    {
+        id: 1,
+        name: "Lua",
+        icon: "🌙",
+        requiredAmount: 1000,
+        mass: "7,35 × 10²² kg",
+        description: "Você já deixou a Terra e chegou à Lua, um corpo 81 vezes menos massivo que a Terra. Seu capital ainda é pequeno, mas já começa a ganhar estrutura.",
+        mission: "Estabelecer disciplina de aportes."
+    },
+    {
+        id: 2,
+        name: "Marte",
+        icon: "🪐",
+        requiredAmount: 10000,
+        mass: "6,42 × 10²³ kg",
+        description: "O primeiro planeta conquistado por investidores pioneiros. Menor que a Terra, mas sólido e promissor.",
+        mission: "Aprender sobre diversificação inteligente."
+    },
+    {
+        id: 3,
+        name: "Cinturão de Asteroides",
+        icon: "🌠",
+        requiredAmount: 50000,
+        mass: "3,0 × 10²¹ kg",
+        description: "Agora você pode minerar oportunidades, como investidores que extraem riquezas de pequenos corpos espaciais.",
+        mission: "Expandir horizontes de investimento e encontrar novas fontes de renda."
+    },
+    {
+        id: 4,
+        name: "Júpiter",
+        icon: "🪐",
+        requiredAmount: 100000,
+        mass: "1,90 × 10²⁷ kg",
+        description: "Seu patrimônio cresce rapidamente, e você agora representa um dos maiores planetas do Sistema Solar.",
+        mission: "Dominar o mercado de renda variável e alternativas."
+    },
+    {
+        id: 5,
+        name: "Estrela Anã Vermelha",
+        icon: "🌀",
+        requiredAmount: 500000,
+        mass: "1,99 × 10²⁹ kg",
+        description: "Você deixou de ser um planeta e se tornou uma estrela! As anãs vermelhas representam investidores sólidos e resilientes.",
+        mission: "Construir um portfólio à prova de crises."
+    },
+    {
+        id: 6,
+        name: "Sol",
+        icon: "☀️",
+        requiredAmount: 1000000,
+        mass: "1,99 × 10³⁰ kg",
+        description: "O Sol é o centro de um sistema próspero. Aqui, investidores têm influência real no mercado e geram calor e movimento.",
+        mission: "Criar um ecossistema sustentável de investimentos."
+    },
+    {
+        id: 7,
+        name: "Estrela Gigante Azul",
+        icon: "💥",
+        requiredAmount: 5000000,
+        mass: "1,99 × 10³² kg",
+        description: "Agora você é uma estrela gigante, muito mais brilhante e poderosa que o Sol. Aqui, poucos investidores chegam.",
+        mission: "Planejar sucessão patrimonial e expansão global."
+    },
+    {
+        id: 8,
+        name: "Galáxia",
+        icon: "🌌",
+        requiredAmount: 10000000,
+        mass: "1,99 × 10⁴² kg",
+        description: "Agora você deixou de ser uma única estrela e se tornou um sistema inteiro de oportunidades e patrimônio.",
+        mission: "Tornar-se referência mundial em gestão e crescimento financeiro."
+    },
+    {
+        id: 9,
+        name: "Buraco Negro Supermassivo",
+        icon: "🕳️",
+        requiredAmount: 50000000,
+        mass: "1,99 × 10⁴⁸ kg",
+        description: "O ápice do conhecimento financeiro. Assim como um buraco negro dobra a realidade, você domina os mercados.",
+        mission: "Criar um império imortal no mundo dos investimentos."
+    }
 ]; 

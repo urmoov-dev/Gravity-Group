@@ -9,10 +9,8 @@
   onMount(() => {
     if (browser) {
       // Observa mudanças no estado de autenticação
-      const unsubscribe = auth.onAuthStateChanged((user) => {
-        if (user) {
-          goto('/hub');
-        } else {
+      const unsubscribe = auth.onAuthStateChanged(async (user) => {
+        if (!user) {
           goto('/login');
         }
         loading = false;

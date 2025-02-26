@@ -3,38 +3,35 @@
     import { onMount } from 'svelte';
     export let activeSection: string;
 
-    // Seções de navegação
     const sections = [
-        { id: 'overview', label: 'OVERVIEW', icon: '📊' },
-        { id: 'portfolio', label: 'PORTFOLIO', icon: '💼' },
-        { id: 'market', label: 'MARKET', icon: '📈' },
-        { id: 'analysis', label: 'ANALYSIS', icon: '🔍' },
-        { id: 'settings', label: 'SETTINGS', icon: '⚙️' }
+        { id: 'overview', label: 'VISÃO GERAL', icon: '📊' },
+        { id: 'portfolio', label: 'PORTFÓLIO', icon: '💼' },
+        { id: 'market', label: 'MERCADO', icon: '📈' },
+        { id: 'analysis', label: 'ANÁLISE', icon: '🔍' },
+        { id: 'settings', label: 'AJUSTES', icon: '⚙️' }
     ];
 
-    // Status do sistema
-    let systemTime = new Date();
-    let pingStatus = 'ONLINE';
-    let connectionStrength = 100;
+    const stats = [
+        { label: 'Status do Sistema', value: 'ONLINE', color: 'text-green-400' },
+        { label: 'Integridade', value: '98%', color: 'text-blue-400' },
+        { label: 'Latência', value: '45ms', color: 'text-blue-400' },
+        { label: 'Conexão', value: 'SEGURA', color: 'text-green-400' }
+    ];
 
-    // Atualizar tempo e status
+    let currentTime = new Date();
+    let connectionStrength = 100;
+    
     onMount(() => {
         const timer = setInterval(() => {
-            systemTime = new Date();
+            currentTime = new Date();
             connectionStrength = 85 + Math.random() * 15;
         }, 1000);
 
         return () => clearInterval(timer);
     });
 
-    function formatTime(date: Date): string {
-        return date.toLocaleTimeString('pt-BR', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    }
+    $: formattedTime = currentTime.toLocaleTimeString('pt-BR');
+    $: formattedDate = currentTime.toLocaleDateString('pt-BR');
 
     function getConnectionClass(strength: number): string {
         if (strength >= 90) return 'text-green-400';
@@ -43,39 +40,50 @@
     }
 </script>
 
-<div class="top-bar h-16 bg-black/30 backdrop-blur-sm border-b border-blue-500/20 px-4">
-    <div class="h-full flex items-center justify-between">
-        <!-- Navegação Principal -->
-        <nav class="flex space-x-6">
-            {#each sections as section}
-                <button
-                    class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300
-                           {activeSection === section.id ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400 hover:text-white'}"
-                    on:click={() => activeSection = section.id}
-                >
-                    <span class="text-lg">{section.icon}</span>
-                    <span class="font-mono text-sm">{section.label}</span>
-                </button>
-            {/each}
-        </nav>
-
+<div class="relative z-20">
+    <!-- Barra superior com gradiente e blur -->
+    <div class="bg-black/40 backdrop-blur-xl border-b border-blue-500/20">
         <!-- Status do Sistema -->
-        <div class="flex items-center space-x-6 font-mono text-sm">
-            <!-- Tempo do Sistema -->
-            <div class="flex items-center space-x-2">
-                <span class="text-gray-400">SYS TIME</span>
-                <span class="text-blue-400">{formatTime(systemTime)}</span>
-            </div>
+        <div class="max-w-7xl mx-auto px-4 py-2">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-6">
+                    {#each stats as stat}
+                        <div class="flex items-center space-x-2">
+                            <span class="text-gray-400 text-sm">{stat.label}:</span>
+                            <span class="font-mono {stat.color} text-sm flex items-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
+                                {stat.value}
+                            </span>
+                        </div>
+                    {/each}
+                </div>
 
-            <!-- Status da Conexão -->
-            <div class="flex items-center space-x-2">
-                <span class="text-gray-400">STATUS</span>
-                <span class="text-green-400">{pingStatus}</span>
+                <!-- Data e Hora -->
+                <div class="flex items-center space-x-4 text-sm">
+                    <div class="text-blue-400 font-mono">{formattedTime}</div>
+                    <div class="text-gray-400">{formattedDate}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navegação Principal -->
+        <nav class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex space-x-6">
+                {#each sections as section}
+                    <button
+                        class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300
+                               {activeSection === section.id ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400 hover:text-white'}"
+                        on:click={() => activeSection = section.id}
+                    >
+                        <span class="text-lg">{section.icon}</span>
+                        <span class="font-mono text-sm">{section.label}</span>
+                    </button>
+                {/each}
             </div>
 
             <!-- Força da Conexão -->
             <div class="flex items-center space-x-2">
-                <span class="text-gray-400">SIGNAL</span>
+                <span class="text-gray-400 text-sm">SINAL</span>
                 <div class="flex space-x-0.5">
                     {#each Array(4) as _, i}
                         <div 
@@ -88,26 +96,14 @@
                     {/each}
                 </div>
             </div>
-        </div>
+        </nav>
     </div>
+
+    <!-- Linha de gradiente -->
+    <div class="h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
 </div>
 
 <style>
-    .top-bar {
-        animation: topBarSlide 0.5s ease-out forwards;
-    }
-
-    @keyframes topBarSlide {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
     button {
         position: relative;
         overflow: hidden;

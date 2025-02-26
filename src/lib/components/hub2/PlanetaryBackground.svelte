@@ -7,7 +7,7 @@
     let scene: THREE.Scene;
     let camera: THREE.PerspectiveCamera;
     let renderer: THREE.WebGLRenderer;
-    let stars: THREE.Points;
+    let starField: THREE.Points;
     let planet: THREE.Object3D;
     let atmosphere: THREE.Object3D;
     let rings: THREE.Object3D | null = null;
@@ -106,8 +106,8 @@
             sizeAttenuation: true
         });
 
-        stars = new THREE.Points(starsGeometry, starsMaterial);
-        scene.add(stars);
+        starField = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(starField);
 
         // Criação do planeta
         const planetConfig = planetConfigs.saturn; // Exemplo usando Saturno
@@ -148,9 +148,10 @@
                 opacity: 0.6
             });
 
-            rings = new THREE.Mesh(ringGeometry, ringMaterial);
-            rings.rotation.x = Math.PI / 3;
-            scene.add(rings);
+            const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+            ringMesh.rotation.x = Math.PI / 3;
+            scene.add(ringMesh);
+            rings = ringMesh;
         }
 
         // Animação
@@ -159,11 +160,15 @@
 
             // Rotação do planeta
             planet.rotation.y += 0.001;
-            if (atmosphere) atmosphere.rotation.y += 0.001;
-            if (rings) rings.rotation.z += 0.0005;
+            atmosphere.rotation.y += 0.001;
+            
+            // Movimento dos anéis (se existirem)
+            if (rings !== null) {
+                rings.rotation.z += 0.0005;
+            }
 
             // Movimento suave das estrelas
-            stars.rotation.y += 0.0001;
+            starField.rotation.y += 0.0001;
 
             renderer.render(scene, camera);
         }
@@ -195,12 +200,10 @@
             planet.rotation.x += (targetRotationX - planet.rotation.x) * 0.05;
             planet.rotation.y += (targetRotationY - planet.rotation.y) * 0.05;
 
-            if (atmosphere) {
-                atmosphere.rotation.x += (targetRotationX - atmosphere.rotation.x) * 0.05;
-                atmosphere.rotation.y += (targetRotationY - atmosphere.rotation.y) * 0.05;
-            }
+            atmosphere.rotation.x += (targetRotationX - atmosphere.rotation.x) * 0.05;
+            atmosphere.rotation.y += (targetRotationY - atmosphere.rotation.y) * 0.05;
 
-            if (rings) {
+            if (rings !== null) {
                 rings.rotation.x += (targetRotationX - rings.rotation.x) * 0.05;
                 rings.rotation.y += (targetRotationY - rings.rotation.y) * 0.05;
             }
@@ -211,7 +214,8 @@
         return () => {
             window.removeEventListener('resize', onWindowResize);
             window.removeEventListener('mousemove', onMouseMove);
-            container.removeChild(renderer.domElement);
+            renderer.dispose();
+            scene.clear();
         };
     }
 
@@ -221,11 +225,13 @@
     });
 </script>
 
-<div class="planetary-background" bind:this={container}></div>
+<div class="planetary-background" bind:this={container}>
+    <div class="overlay"></div>
+</div>
 
 <style>
     .planetary-background {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
@@ -233,6 +239,13 @@
         z-index: 0;
         overflow: hidden;
         background: radial-gradient(circle at 50% 50%, #000922 0%, #000 100%);
+    }
+
+    .overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(0, 20, 40, 0.2), rgba(0, 0, 0, 0.4));
+        pointer-events: none;
     }
 
     :global(canvas) {

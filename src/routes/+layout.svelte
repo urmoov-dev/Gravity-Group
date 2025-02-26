@@ -15,6 +15,7 @@
 	];
   
 	let menuVisible = false;
+	let loading = false;
   
 	const toggleMenu = () => {
 	  menuVisible = !menuVisible;
@@ -22,11 +23,14 @@
 
 	const handleSignOut = async () => {
 	  try {
+		loading = true;
 		await signOut(auth);
 		clearSessionCookie();
 		goto('/login');
 	  } catch (error) {
 		console.error('Erro ao fazer logout:', error);
+	  } finally {
+		loading = false;
 	  }
 	};
 
@@ -35,10 +39,27 @@
 	  menuVisible = false; // Fecha o menu mobile se estiver aberto
 	  goto(path);
 	};
+
+	$: showLogoutButton = $user && $page.url.pathname !== '/login' && $page.url.pathname !== '/onboarding';
+	$: showHeader = $page.url.pathname !== '/' && $page.url.pathname !== '/onboarding';
+	$: showFooter = $page.url.pathname !== '/' && $page.url.pathname !== '/onboarding';
 </script>
   
 <div class="bg-gradient-to-b from-black via-gray-800 to-gray-900 text-white min-h-screen flex flex-col">
-	{#if $page.url.pathname !== '/'}
+	{#if showLogoutButton}
+		<button 
+			on:click={handleSignOut}
+			class="fixed top-4 right-4 z-50 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center space-x-2 {loading ? 'opacity-50 cursor-not-allowed' : ''}"
+			disabled={loading}
+		>
+			{#if loading}
+				<div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+			{/if}
+			<span>Sair</span>
+		</button>
+	{/if}
+
+	{#if showHeader}
 	<!-- Header -->
 	<header class="sticky top-0 z-50 bg-black/80 backdrop-blur-sm border-b border-white/10">
 	  <div class="container mx-auto flex justify-between items-center px-4 h-16">
@@ -142,7 +163,7 @@
 	  <slot />
 	</main>
   
-	{#if $page.url.pathname !== '/'}
+	{#if showFooter}
 	<!-- Footer -->
 	<footer class="bg-black py-4">
 	  <div class="container mx-auto text-center px-4">

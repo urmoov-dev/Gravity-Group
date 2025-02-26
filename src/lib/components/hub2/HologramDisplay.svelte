@@ -1,146 +1,104 @@
 <!-- HologramDisplay.svelte -->
 <script lang="ts">
     import { onMount } from 'svelte';
-    import * as THREE from 'three';
 
-    let container: HTMLElement;
-    let scene: THREE.Scene;
-    let camera: THREE.PerspectiveCamera;
-    let renderer: THREE.WebGLRenderer;
-    let hologramRing: THREE.Mesh;
+    let container: HTMLDivElement;
+    let isActive = false;
 
     onMount(() => {
-        initHologram();
-        animate();
-
+        isActive = true;
         return () => {
-            renderer?.dispose();
-            scene?.clear();
+            isActive = false;
         };
     });
-
-    function initHologram() {
-        // Configuração básica
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
-
-        // Criação do anel holográfico
-        const ringGeometry = new THREE.TorusGeometry(5, 0.2, 16, 100);
-        const ringMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.5,
-            side: THREE.DoubleSide
-        });
-        hologramRing = new THREE.Mesh(ringGeometry, ringMaterial);
-        scene.add(hologramRing);
-
-        // Adicionar efeitos de luz
-        const light = new THREE.PointLight(0x00ffff, 1, 100);
-        light.position.set(0, 0, 10);
-        scene.add(light);
-
-        // Posicionamento da câmera
-        camera.position.z = 15;
-
-        // Handler de redimensionamento
-        window.addEventListener('resize', onHologramResize);
-    }
-
-    function onHologramResize() {
-        if (container) {
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        }
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-
-        // Rotação do anel
-        if (hologramRing) {
-            hologramRing.rotation.x += 0.01;
-            hologramRing.rotation.y += 0.005;
-        }
-
-        renderer.render(scene, camera);
-    }
 </script>
 
-<div class="hologram-container relative w-full h-full">
-    <!-- Container Three.js -->
-    <div bind:this={container} class="absolute inset-0"></div>
-
-    <!-- Overlay com conteúdo -->
-    <div class="absolute inset-0 flex items-center justify-center">
-        <div class="hologram-content relative z-10">
-            <slot />
-        </div>
+<div class="hologram-container" class:active={isActive}>
+    <!-- Efeito de escaneamento -->
+    <div class="scan-effect"></div>
+    
+    <!-- Efeito de glitch -->
+    <div class="glitch-effect"></div>
+    
+    <!-- Conteúdo -->
+    <div class="content">
+        <slot />
     </div>
-
-    <!-- Efeitos de projeção -->
-    <div class="projection-lines"></div>
 </div>
 
 <style>
     .hologram-container {
-        perspective: 1000px;
-        background: radial-gradient(
-            circle at center,
-            rgba(0, 255, 255, 0.1) 0%,
-            transparent 70%
-        );
+        position: relative;
+        height: 100%;
+        overflow: hidden;
+        background: rgba(0, 20, 40, 0.3);
+        border-radius: 0.5rem;
+        box-shadow: 
+            inset 0 0 30px rgba(0, 150, 255, 0.15),
+            0 0 20px rgba(0, 150, 255, 0.1);
+        opacity: 0;
+        transform: scale(0.98);
+        transition: opacity 0.5s ease, transform 0.5s ease;
     }
 
-    .hologram-content {
-        animation: hologramFloat 4s ease-in-out infinite;
+    .hologram-container.active {
+        opacity: 1;
+        transform: scale(1);
     }
 
-    .projection-lines {
+    .content {
+        position: relative;
+        z-index: 10;
+        padding: 1rem;
+    }
+
+    .scan-effect {
         position: absolute;
         inset: 0;
-        background: 
-            repeating-linear-gradient(
-                0deg,
-                transparent,
-                rgba(0, 255, 255, 0.1) 1px,
-                transparent 2px
-            );
-        opacity: 0.5;
+        background: linear-gradient(
+            to bottom,
+            transparent 50%,
+            rgba(0, 150, 255, 0.1) 50%
+        );
+        background-size: 100% 4px;
+        animation: scan 8s linear infinite;
         pointer-events: none;
     }
 
-    .projection-lines::before,
-    .projection-lines::after {
-        content: '';
+    .glitch-effect {
         position: absolute;
-        left: 50%;
-        width: 1px;
-        height: 100%;
+        inset: 0;
         background: linear-gradient(
-            to bottom,
-            transparent,
-            rgba(0, 255, 255, 0.5),
-            transparent
+            90deg,
+            transparent 0%,
+            rgba(0, 150, 255, 0.2) 45%,
+            rgba(0, 150, 255, 0.1) 50%,
+            transparent 100%
         );
-        animation: scanVertical 2s linear infinite;
+        opacity: 0;
+        animation: glitch 4s infinite;
+        pointer-events: none;
     }
 
-    .projection-lines::after {
-        animation-delay: 1s;
-    }
-
-    @keyframes hologramFloat {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-10px); }
-    }
-
-    @keyframes scanVertical {
+    @keyframes scan {
         from { transform: translateY(-100%); }
         to { transform: translateY(100%); }
+    }
+
+    @keyframes glitch {
+        0% { 
+            opacity: 0;
+            transform: translateX(-100%);
+        }
+        50% {
+            opacity: 0.5;
+        }
+        51% {
+            opacity: 0;
+        }
+        100% { 
+            opacity: 0;
+            transform: translateX(100%);
+        }
     }
 </style> 

@@ -8,6 +8,8 @@
   import { investmentLevels } from '$lib/types/profile';
   import type { InvestmentLevel } from '$lib/types/profile';
   import { user } from '$lib/stores/auth';
+  import AstronomicalLevel from '$lib/components/AstronomicalLevel.svelte';
+  import { profile } from '$lib/stores/profile';
 
   let loading = true;
   let charts: ApexCharts[] = [];
@@ -15,6 +17,8 @@
   let currentLevel: InvestmentLevel;
   let nextLevel: InvestmentLevel;
   let progress = 0;
+  let showOnboardingButton = false;
+  let showTermsButton = false;
 
   interface Nivel {
     valor: number;
@@ -251,8 +255,27 @@
     }
   }
 
-  function viewTerms() {
+  onMount(() => {
+    // Verificar cookies
+    const termsAccepted = document.cookie.includes('terms_accepted=true');
+    const onboardingCompleted = document.cookie.includes('onboarding_completed=true');
+    const termsAcceptanceDate = document.cookie.includes('terms_acceptance_date') 
+        ? new Date(decodeURIComponent(document.cookie.split('terms_acceptance_date=')[1]?.split(';')[0] || '')).toLocaleDateString('pt-BR')
+        : null;
+
+    showTermsButton = termsAccepted;
+    showOnboardingButton = onboardingCompleted;
+
+    // Simular um valor para teste (remover em produção)
+    profile.updateAmount(100000);
+  });
+
+  function handleViewTerms() {
     goto('/terms-history');
+  }
+
+  function handleRedoOnboarding() {
+    goto('/onboarding');
   }
 </script>
 
@@ -265,186 +288,159 @@
     </div>
   </div>
 {:else}
-  <div class="min-h-screen bg-black text-white p-8">
-    <div class="max-w-6xl mx-auto space-y-8">
-      <!-- Cabeçalho do Perfil -->
-      <div class="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-xl p-8 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-20">
-          <div class="stars"></div>
-        </div>
-        <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10"></div>
-        
-        <div class="flex items-center space-x-6 relative z-10">
-          <div class="relative group">
-            <div class="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20 group-hover:opacity-30 transition-all duration-500"></div>
-            <div class="w-24 h-24 bg-gradient-to-br from-gray-900 to-black rounded-full border border-white/20 flex items-center justify-center text-4xl relative overflow-hidden">
-              <div class="stars absolute inset-0 opacity-50"></div>
-              <div class="relative animate-pulse">
-                {currentLevel.icon}
-              </div>
-            </div>
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              {$user?.email?.split('@')[0] || 'Investidor'}
-            </h1>
-            <p class="text-gray-400">{$user?.email}</p>
-            <div class="mt-2">
-              <span class="px-4 py-1 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full text-sm border border-white/10 flex items-center space-x-2 w-fit">
-                <span class="text-lg">{currentLevel.icon}</span>
-                <span>{currentLevel.name}</span>
-              </span>
-            </div>
-          </div>
+  <div class="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900 via-black to-black relative overflow-hidden">
+    <!-- Efeito de partículas -->
+    <div class="stars absolute inset-0 opacity-50"></div>
+    
+    <!-- Grid de linhas holográficas -->
+    <div class="absolute inset-0" style="
+      background-image: linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      transform: perspective(500px) rotateX(60deg) translateY(-100px);
+      opacity: 0.2;
+    "></div>
+
+    <div class="relative max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <!-- Cabeçalho com efeito de brilho -->
+      <div class="mb-8 relative">
+        <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-25"></div>
+        <div class="relative bg-black/50 backdrop-blur-xl rounded-lg border border-blue-500/20 p-6">
+          <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+            Seu Perfil Interestelar
+          </h1>
+          <p class="text-gray-400 mt-2">Navegando pelo cosmos dos investimentos</p>
         </div>
       </div>
 
-      <!-- Documentos e Termos -->
-      <div class="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-xl p-6 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-20">
-          <div class="stars"></div>
-        </div>
-        <div class="relative z-10">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Documentos
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Horizonte de Eventos -->
+        <div class="lg:col-span-2">
+          <div class="bg-black/40 backdrop-blur-xl rounded-xl border border-blue-500/20 overflow-hidden hover:border-blue-400/30 transition-colors duration-500">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold text-blue-400 mb-6 flex items-center">
+                <span class="text-2xl mr-2">🌌</span>
+                Horizonte de Eventos
               </h2>
-              <p class="text-sm text-gray-400">Seus documentos e termos aceitos</p>
-            </div>
-            <button
-              on:click={viewTerms}
-              class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-black"
-            >
-              Visualizar Termos de Serviço
-            </button>
-          </div>
-          <div class="bg-black/30 backdrop-blur-sm rounded-lg p-4 border border-white/10">
-            <div class="flex items-center space-x-3">
-              <div class="text-green-500 text-xl">✓</div>
-              <div>
-                <h3 class="font-medium text-white">Termos de Serviço</h3>
-                <p class="text-sm text-gray-400">
-                  Aceito em: {document.cookie.includes('terms_accepted=true') ? new Date().toLocaleDateString('pt-BR') : 'Não aceito'}
-                </p>
-              </div>
+              <AstronomicalLevel showDetails={true} />
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Nível Atual -->
-      <div class="bg-gray-900 rounded-lg p-6 mb-8 border border-gray-700">
-        <div class="flex items-center space-x-4 mb-4">
-          <span class="text-4xl">{currentLevel.icon}</span>
-          <div>
-            <h2 class="text-2xl font-bold {currentLevel.color}">{currentLevel.name}</h2>
-            <p class="text-gray-400">{currentLevel.description}</p>
-          </div>
-        </div>
-
-        <!-- Barra de Progresso -->
-        {#if nextLevel}
-          <div class="mb-4">
-            <div class="flex justify-between text-sm text-gray-400 mb-1">
-              <span>R$ {currentLevel.minValue.toLocaleString('pt-BR')}</span>
-              <span>R$ {nextLevel.minValue.toLocaleString('pt-BR')}</span>
-            </div>
-            <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
-              <div 
-                class="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-500"
-                style="width: {progress}%"
-              ></div>
-            </div>
-            <p class="text-sm text-gray-400 mt-2">
-              {nextLevel.nextGoal}
-            </p>
-          </div>
-        {/if}
-
-        <!-- Benefícios -->
-        <div class="mt-6">
-          <h3 class="text-xl font-semibold mb-4">Seus Benefícios</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {#each currentLevel.benefits as benefit}
-              <div class="flex items-center space-x-2 text-gray-300">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{benefit}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-      </div>
-
-      <!-- Próximos Níveis -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {#each investmentLevels.filter(level => level.minValue > currentValue) as level}
-          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 opacity-75 hover:opacity-100 transition-opacity">
-            <div class="flex items-center space-x-3 mb-4">
-              <span class="text-3xl">{level.icon}</span>
-              <h3 class="text-xl font-semibold {level.color}">{level.name}</h3>
-            </div>
-            <p class="text-gray-400 mb-4">{level.description}</p>
-            <div class="text-sm text-gray-500">
-              Disponível a partir de R$ {level.minValue.toLocaleString('pt-BR')}
-            </div>
-          </div>
-        {/each}
-      </div>
-
-      <!-- Jornada Espacial -->
-      <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6 relative overflow-hidden">
-        <div class="absolute inset-0">
-          <div class="stars"></div>
-        </div>
-        <div class="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-purple-500/5"></div>
-        
-        <div class="relative z-10 space-y-8">
-          <div class="flex items-center justify-between">
-            <div>
-              <h2 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Jornada Espacial em Andamento
+          <!-- Gráfico de Evolução -->
+          <div class="mt-8 bg-black/40 backdrop-blur-xl rounded-xl border border-blue-500/20 overflow-hidden hover:border-blue-400/30 transition-colors duration-500">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold text-blue-400 mb-6 flex items-center">
+                <span class="text-2xl mr-2">📈</span>
+                Evolução Patrimonial
               </h2>
-              <p class="text-sm text-gray-400 mt-1">Explorando o Sistema Solar</p>
-            </div>
-            <div class="text-right">
-              <div class="text-2xl font-bold text-green-400">{formatCurrency(currentValue)}</div>
-              <div class="text-sm text-gray-400">Capital Acumulado</div>
-            </div>
-          </div>
-
-          <!-- Status da Missão -->
-          <div class="grid grid-cols-3 gap-4 mb-8">
-            <div class="bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-lg p-4 border border-white/5">
-              <div class="text-sm text-gray-400">Nível Atual</div>
-              <div class="text-lg font-semibold flex items-center gap-2">
-                <span class="text-3xl">{currentLevel.icon}</span>
-                <span>{currentLevel.name}</span>
-              </div>
+              <div id="progress-chart" class="w-full h-[350px]"></div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Gráfico de Evolução -->
-      <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-semibold mb-4">Evolução Patrimonial</h2>
-        <div id="progress-chart" class="w-full h-[350px]"></div>
-      </div>
+        <!-- Painel Lateral -->
+        <div class="space-y-6">
+          <!-- Status dos Documentos -->
+          <div class="bg-black/40 backdrop-blur-xl rounded-xl border border-blue-500/20 overflow-hidden hover:border-blue-400/30 transition-colors duration-500">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold text-blue-400 mb-6 flex items-center">
+                <span class="text-2xl mr-2">📋</span>
+                Documentos e Preferências
+              </h2>
+              
+              <!-- Status dos Termos -->
+              <div class="mb-6 relative">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg blur-sm"></div>
+                <div class="relative bg-black/30 p-4 rounded-lg border border-blue-500/10">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-white">Termos de Serviço</h3>
+                    {#if showTermsButton}
+                      <button
+                        on:click={() => goto('/terms-history')}
+                        class="text-blue-400 hover:text-blue-300 transition-colors flex items-center space-x-2 group"
+                      >
+                        <span>Ver histórico</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    {/if}
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-sm text-gray-400">
+                      Aceito em {new Date().toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-      <!-- Conquistas -->
-      <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6">
-        <h2 class="text-xl font-semibold mb-4">Conquistas</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {#each investmentLevels as nivel}
-            <div class="bg-white/5 rounded-lg p-4 text-center {currentValue >= nivel.minValue ? 'border border-green-500/30' : 'opacity-50'}">
-              <div class="text-3xl mb-2">{nivel.icon}</div>
-              <div class="font-semibold">{nivel.name}</div>
-              <div class="text-sm text-gray-400">{formatCurrency(nivel.minValue)}</div>
+              <!-- Status do Onboarding -->
+              <div class="relative">
+                <div class="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-lg blur-sm"></div>
+                <div class="relative bg-black/30 p-4 rounded-lg border border-blue-500/10">
+                  <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-white">Processo de Onboarding</h3>
+                    {#if showOnboardingButton}
+                      <button 
+                        on:click={handleRedoOnboarding}
+                        class="px-3 py-1 text-sm bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-md transition-colors flex items-center space-x-2 group"
+                      >
+                        <span>Refazer</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    {/if}
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-sm text-gray-400">Completo</span>
+                  </div>
+                </div>
+              </div>
             </div>
-          {/each}
+          </div>
+
+          <!-- Configurações -->
+          <div class="bg-black/40 backdrop-blur-xl rounded-xl border border-blue-500/20 overflow-hidden hover:border-blue-400/30 transition-colors duration-500">
+            <div class="p-6">
+              <h2 class="text-xl font-semibold text-blue-400 mb-6 flex items-center">
+                <span class="text-2xl mr-2">⚙️</span>
+                Configurações
+              </h2>
+              
+              <!-- Notificações -->
+              <div class="flex items-center justify-between p-4 bg-black/30 rounded-lg mb-4 border border-blue-500/10">
+                <div>
+                  <h3 class="text-white mb-1 flex items-center">
+                    <span class="text-lg mr-2">🔔</span>
+                    Notificações
+                  </h3>
+                  <p class="text-sm text-gray-400">Receba alertas importantes</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+              </div>
+
+              <!-- Modo Escuro -->
+              <div class="flex items-center justify-between p-4 bg-black/30 rounded-lg border border-blue-500/10">
+                <div>
+                  <h3 class="text-white mb-1 flex items-center">
+                    <span class="text-lg mr-2">🌙</span>
+                    Modo Escuro
+                  </h3>
+                  <p class="text-sm text-gray-400">Ajuste o tema da interface</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked class="sr-only peer">
+                  <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -454,12 +450,12 @@
 <style>
   .stars {
     background-image: 
-      radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 160px 120px, #fff, rgba(0,0,0,0));
+      radial-gradient(2px 2px at 20px 30px, rgba(255, 255, 255, 0.8), rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 40px 70px, rgba(255, 255, 255, 0.8), rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 50px 160px, rgba(255, 255, 255, 0.8), rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 90px 40px, rgba(255, 255, 255, 0.8), rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 130px 80px, rgba(255, 255, 255, 0.8), rgba(0,0,0,0)),
+      radial-gradient(2px 2px at 160px 120px, rgba(255, 255, 255, 0.8), rgba(0,0,0,0));
     background-repeat: repeat;
     background-size: 200px 200px;
     animation: twinkle 4s infinite;
@@ -475,7 +471,5 @@
     margin: 0;
     overflow-x: hidden;
     background: black;
-    background-image: 
-      radial-gradient(circle at center, #1a1a3a 0%, #000000 100%);
   }
 </style> 
