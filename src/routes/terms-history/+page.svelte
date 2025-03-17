@@ -1,178 +1,116 @@
 <script lang="ts">
-    import { user } from '$lib/stores/auth';
+    import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import { terms } from '$lib/stores/terms';
+    import { user } from '$lib/stores/auth';
+    import { auth } from '$lib/firebase';
 
-    interface TermoDeServico {
-        id: string;
-        versao: string;
-        dataPublicacao: string;
-        status: 'atual' | 'futuro' | 'anterior';
-        titulo: string;
-        descricao: string;
-        dataAceite?: string;
+    interface HistoryItem {
+        version: string;
+        acceptedAt: Date;
     }
 
-    // Exemplo de termos (isso viria do backend em uma implementação real)
-    const termosDeServico: TermoDeServico[] = [
-        {
-            id: 'v2-2024',
-            versao: '2.0',
-            dataPublicacao: '2024-03-01',
-            status: 'atual',
-            titulo: 'Termos de Serviço - Atualização 2024',
-            descricao: 'Versão atual dos termos, incluindo novas políticas de investimento e segurança.',
-            dataAceite: document.cookie.includes('terms_accepted=true') 
-                ? new Date(decodeURIComponent(document.cookie.split('terms_acceptance_date=')[1]?.split(';')[0] || '')).toLocaleDateString('pt-BR')
-                : undefined
-        },
-        {
-            id: 'v3-2024',
-            versao: '3.0',
-            dataPublicacao: '2024-06-01',
-            status: 'futuro',
-            titulo: 'Novos Termos de Serviço - Junho 2024',
-            descricao: 'Atualização planejada incluindo novas funcionalidades e serviços.'
-        }
-    ];
+    let historyItems: HistoryItem[] = [];
+    let loading = true;
 
-    function viewTerms(termoId: string) {
-        // Se for a versão aceita, mostrar na página de termos aceitos
-        if (document.cookie.includes('terms_version=' + termoId)) {
-            goto('/terms-accepted');
+    onMount(() => {
+        const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+            if (!firebaseUser) {
+                goto('/login');
+            }
+        });
+
+        // Carregar o histórico
+        historyItems = terms.history.get().sort((a, b) => 
+            new Date(b.acceptedAt).getTime() - new Date(a.acceptedAt).getTime()
+        );
+        loading = false;
+
+        return () => {
+            unsubscribe();
+        };
+    });
+
+    function formatDate(dateString: string | Date): string {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function handleViewTermsVersion(version: string) {
+        if (version === terms.getCurrentVersion()) {
+            alert(`Você aceitou a versão ${version} dos Termos de Serviço durante o onboarding.`);
         } else {
-            // Se for outra versão, mostrar na página de termos normal
-            goto(`/terms-of-service?version=${termoId}&view=true`);
+            const historyItem = historyItems.find(item => item.version === version);
+            if (historyItem) {
+                alert(`Você aceitou a versão ${version} dos Termos de Serviço em ${formatDate(historyItem.acceptedAt)}.`);
+            }
         }
     }
 
-    function formatDate(date: string): string {
-        return new Date(date).toLocaleDateString('pt-BR');
+    function handleBack() {
+        goto('/profile');
     }
 </script>
 
-<div class="min-h-screen bg-black text-white p-8">
-    <div class="max-w-6xl mx-auto space-y-8">
-        <!-- Cabeçalho -->
-        <div class="bg-gradient-to-br from-gray-900 to-black border border-white/10 rounded-xl p-8 relative overflow-hidden">
-            <div class="absolute inset-0 opacity-20">
-                <div class="stars"></div>
-            </div>
-            <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10"></div>
-            
-            <div class="relative z-10">
-                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                    Histórico de Termos de Serviço
-                </h1>
-                <p class="text-gray-400 mt-2">
-                    Acompanhe todas as versões dos termos de serviço e suas atualizações
-                </p>
-            </div>
-        </div>
-
-        <!-- Termos Atuais -->
-        <div class="space-y-6">
-            <h2 class="text-2xl font-semibold text-white">Termos Atuais</h2>
-            {#each termosDeServico.filter(termo => termo.status === 'atual') as termo}
-                <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute inset-0 opacity-20">
-                        <div class="stars"></div>
-                    </div>
-                    <div class="relative z-10">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-xl font-bold text-white">{termo.titulo}</h3>
-                                <p class="text-sm text-gray-400">Versão {termo.versao} - Publicado em {formatDate(termo.dataPublicacao)}</p>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                {#if termo.dataAceite}
-                                    <span class="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm">
-                                        Aceito em {termo.dataAceite}
-                                    </span>
-                                {/if}
-                                <button
-                                    on:click={() => viewTerms(termo.id)}
-                                    class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
-                                >
-                                    Visualizar
-                                </button>
-                            </div>
-                        </div>
-                        <p class="text-gray-300">{termo.descricao}</p>
-                    </div>
+<div class="min-h-screen bg-black py-16 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto">
+        <div class="bg-gray-900 rounded-xl shadow-2xl overflow-hidden border border-gray-800">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-white">Histórico de Termos de Serviço</h1>
+                    <p class="text-gray-400 mt-1">Registro de todos os termos que você aceitou</p>
                 </div>
-            {/each}
-        </div>
+                <button
+                    on:click={handleBack}
+                    class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                    Voltar
+                </button>
+            </div>
 
-        <!-- Termos Futuros -->
-        <div class="space-y-6">
-            <h2 class="text-2xl font-semibold text-white">Próximas Atualizações</h2>
-            {#each termosDeServico.filter(termo => termo.status === 'futuro') as termo}
-                <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6 relative overflow-hidden group">
-                    <div class="absolute inset-0 opacity-20">
-                        <div class="stars"></div>
+            <div class="p-6">
+                {#if loading}
+                    <div class="flex justify-center py-12">
+                        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
-                    <div class="relative z-10">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 class="text-xl font-bold text-white">{termo.titulo}</h3>
-                                <p class="text-sm text-gray-400">Versão {termo.versao} - Previsto para {formatDate(termo.dataPublicacao)}</p>
-                            </div>
-                            <span class="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
-                                Em breve
-                            </span>
-                        </div>
-                        <p class="text-gray-300">{termo.descricao}</p>
+                {:else if historyItems.length === 0}
+                    <div class="text-center py-12 text-gray-400">
+                        <p>Nenhum registro de aceitação de termos encontrado.</p>
                     </div>
-                </div>
-            {/each}
-        </div>
-
-        <!-- Linha do Tempo -->
-        <div class="bg-black/30 backdrop-blur-lg border border-white/10 rounded-xl p-6">
-            <h2 class="text-2xl font-semibold text-white mb-6">Linha do Tempo</h2>
-            <div class="relative">
-                <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-px bg-gradient-to-b from-blue-500 to-purple-500"></div>
-                <div class="space-y-8">
-                    {#each termosDeServico as termo}
-                        <div class="relative flex items-center">
-                            <div class="flex-1 text-right pr-8">
-                                <h3 class="font-semibold text-white">{termo.titulo}</h3>
-                                <p class="text-sm text-gray-400">Versão {termo.versao}</p>
-                            </div>
-                            <div class="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                            <div class="flex-1 pl-8">
-                                <p class="text-sm text-gray-400">
-                                    {termo.status === 'futuro' ? 'Previsto para' : 'Publicado em'} {formatDate(termo.dataPublicacao)}
-                                </p>
-                                {#if termo.dataAceite}
-                                    <p class="text-sm text-green-400">Aceito em {termo.dataAceite}</p>
+                {:else}
+                    <div class="space-y-6">
+                        {#each historyItems as item, index}
+                            <div class="bg-gray-800 rounded-lg p-5 border border-gray-700">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-white">Versão {item.version}</h3>
+                                        <p class="text-gray-400 mt-1">Aceito em: {formatDate(item.acceptedAt)}</p>
+                                    </div>
+                                    <button
+                                        on:click={() => handleViewTermsVersion(item.version)}
+                                        class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-500 transition-colors"
+                                    >
+                                        Visualizar
+                                    </button>
+                                </div>
+                                {#if index === 0}
+                                    <div class="mt-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-800">
+                                            Versão atual
+                                        </span>
+                                    </div>
                                 {/if}
                             </div>
-                        </div>
-                    {/each}
-                </div>
+                        {/each}
+                    </div>
+                {/if}
             </div>
         </div>
     </div>
-</div>
-
-<style>
-    .stars {
-        background-image: 
-            radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
-            radial-gradient(1px 1px at 160px 120px, #fff, rgba(0,0,0,0));
-        background-repeat: repeat;
-        background-size: 200px 200px;
-        animation: twinkle 4s infinite;
-    }
-
-    @keyframes twinkle {
-        0% { opacity: 0.3; }
-        50% { opacity: 0.6; }
-        100% { opacity: 0.3; }
-    }
-</style> 
+</div> 

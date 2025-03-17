@@ -19,7 +19,7 @@
     <div class="bg-gray-900 rounded-lg shadow-xl p-8 max-w-md w-full text-center">
         <h1 class="text-2xl font-bold text-white mb-4">Redirecionando...</h1>
         <p class="text-gray-300 mb-4">
-            Agora os termos de serviço fazem parte do processo de onboarding.
+            A verificação de termos agora faz parte do processo de onboarding.
             Você será redirecionado automaticamente.
         </p>
         <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>

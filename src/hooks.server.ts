@@ -2,17 +2,21 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
     const sessionCookie = event.cookies.get('session');
-    const termsAccepted = event.cookies.get('terms_accepted');
     const onboardingCompleted = event.cookies.get('onboarding_completed');
     const path = event.url.pathname;
 
     console.log('Current path:', path);
     console.log('Session:', !!sessionCookie);
     console.log('Onboarding completed:', !!onboardingCompleted);
-    console.log('Terms accepted:', !!termsAccepted);
 
     // Rotas que não precisam de autenticação
     const publicRoutes = ['/login', '/', '/api'];
+
+    // Rotas de onboarding que são sempre permitidas se autenticado
+    const onboardingRoutes = [
+        '/onboarding',
+        '/terms-rejected'
+    ];
 
     // Se não está autenticado e não é página pública, redireciona para login
     if (!sessionCookie && !publicRoutes.some(route => path.startsWith(route))) {
@@ -23,7 +27,7 @@ export const handle: Handle = async ({ event, resolve }) => {
         });
     }
 
-    // Se está autenticado, verifica o fluxo de onboarding e termos
+    // Se está autenticado, verifica o fluxo de onboarding
     if (sessionCookie && !path.startsWith('/api')) {
         // Se estiver na página inicial, redireciona para o próximo passo necessário
         if (path === '/') {
@@ -32,12 +36,6 @@ export const handle: Handle = async ({ event, resolve }) => {
                 return new Response(null, {
                     status: 302,
                     headers: { Location: '/onboarding' }
-                });
-            } else if (!termsAccepted) {
-                console.log('Redirecionando página inicial para termos');
-                return new Response(null, {
-                    status: 302,
-                    headers: { Location: '/terms-of-service' }
                 });
             } else {
                 console.log('Redirecionando página inicial para hub');
@@ -49,20 +47,12 @@ export const handle: Handle = async ({ event, resolve }) => {
         }
 
         // Não permitir acesso a outras páginas se não completou onboarding
-        if (!onboardingCompleted && !path.startsWith('/onboarding')) {
+        // (o onboarding já inclui a aceitação dos termos)
+        if (!onboardingCompleted && !onboardingRoutes.some(route => path.startsWith(route))) {
             console.log('Forçando redirecionamento para onboarding');
             return new Response(null, {
                 status: 302,
                 headers: { Location: '/onboarding' }
-            });
-        }
-
-        // Se completou onboarding mas não aceitou os termos
-        if (onboardingCompleted && !termsAccepted && !path.startsWith('/terms-of-service')) {
-            console.log('Forçando redirecionamento para termos');
-            return new Response(null, {
-                status: 302,
-                headers: { Location: '/terms-of-service' }
             });
         }
     }

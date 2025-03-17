@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ cookies, request }) => {
     try {
-        const { userName, userRole, userObjective } = await request.json();
+        const { userName, userRole, objectives, communicationPreferences } = await request.json();
         const completionDate = new Date().toISOString();
         
         // Salvar os dados do onboarding
@@ -31,7 +31,15 @@ export const POST: RequestHandler = async ({ cookies, request }) => {
             sameSite: 'lax'
         });
 
-        cookies.set('user_objective', userObjective, {
+        cookies.set('user_objectives', JSON.stringify(objectives), {
+            path: '/',
+            maxAge: 60 * 60 * 24 * 365,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax'
+        });
+
+        cookies.set('communication_preferences', JSON.stringify(communicationPreferences), {
             path: '/',
             maxAge: 60 * 60 * 24 * 365,
             httpOnly: false,
@@ -47,7 +55,14 @@ export const POST: RequestHandler = async ({ cookies, request }) => {
             sameSite: 'lax'
         });
 
-        return json({ success: true, completionDate });
+        return json({ 
+            success: true, 
+            userName,
+            userRole,
+            objectives,
+            communicationPreferences,
+            completionDate 
+        });
     } catch (error) {
         console.error('Erro ao processar dados do onboarding:', error);
         return json({ error: 'Erro ao processar dados do onboarding' }, { status: 500 });
