@@ -10,10 +10,24 @@
   let loading = false;
   let error = '';
 
-  let container: Element;
-  let globeGroup: THREE.Group;
-  let stars: THREE.Points;
-
+  let container: HTMLElement;
+  let scene: THREE.Scene;
+  let camera: THREE.PerspectiveCamera;
+  let renderer: THREE.WebGLRenderer;
+  let blackHole: THREE.Object3D;
+  let particleSystem: THREE.Points;
+  let gridPoints: THREE.Points[] = [];
+  let animationFrame: number;
+  let isLoggingIn = false;
+  
+  // Configurações do sistema de partículas
+  const GRID_SIZE = 40;
+  const GRID_RESOLUTION = 60;
+  const PARTICLE_COUNT = GRID_RESOLUTION * GRID_RESOLUTION;
+  const BLACK_HOLE_RADIUS = 3.5;
+  const MAX_DISTANCE = Math.sqrt(GRID_SIZE * GRID_SIZE * 2);
+  const GRID_SPACING = 1.5; // Aumento do espaçamento entre partículas
+  
   onMount(() => {
     // Verifica se já está autenticado
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -22,134 +36,9 @@
       }
     });
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 1);
-    container.appendChild(renderer.domElement);
-
-    // Criar um grupo para o globo
-    globeGroup = new THREE.Group();
-    
-    // Criação do globo
-    const radius = 16;
-    const segments = 32;
-    
-    // Material para as linhas
-    const material = new THREE.LineBasicMaterial({ 
-      color: 0xFFFFFF,
-      transparent: true,
-      opacity: 0.6
-    });
-
-    // Criação dos meridianos
-    for (let i = 0; i < segments; i++) {
-      const phi = (i / segments) * Math.PI * 2;
-      const points = [];
-      
-      for (let j = 0; j <= segments; j++) {
-        const theta = (j / segments) * Math.PI;
-        const x = radius * Math.sin(theta) * Math.cos(phi);
-        const y = radius * Math.cos(theta);
-        const z = radius * Math.sin(theta) * Math.sin(phi);
-        points.push(new THREE.Vector3(x, y, z));
-      }
-      
-      const meridian = new THREE.BufferGeometry().setFromPoints(points);
-      globeGroup.add(new THREE.Line(meridian, material));
-    }
-
-    // Criação dos paralelos
-    for (let i = 0; i < segments/2; i++) {
-      const theta = (i / (segments/2)) * Math.PI;
-      const points = [];
-      
-      for (let j = 0; j <= segments; j++) {
-        const phi = (j / segments) * Math.PI * 2;
-        const x = radius * Math.sin(theta) * Math.cos(phi);
-        const y = radius * Math.cos(theta);
-        const z = radius * Math.sin(theta) * Math.sin(phi);
-        points.push(new THREE.Vector3(x, y, z));
-      }
-      
-      const parallel = new THREE.BufferGeometry().setFromPoints(points);
-      globeGroup.add(new THREE.Line(parallel, material));
-    }
-
-    // Posicionar o globo bem mais abaixo
-    globeGroup.position.y = -16;
-
-    // Adicionar o grupo do globo à cena
-    scene.add(globeGroup);
-
-    // Adicionar mais estrelas
-    const starsGeometry = new THREE.BufferGeometry();
-    const starTexture = (() => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 32;
-      canvas.height = 32;
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) return new THREE.Texture();
-      
-      const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-      gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      
-      if (ctx) {
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      
-      return new THREE.CanvasTexture(canvas);
-    })();
-
-    const starsMaterial = new THREE.PointsMaterial({
-      color: 0xFFFFFF,
-      size: 0.15,
-      transparent: true,
-      opacity: 0.8,
-      map: starTexture,
-      alphaTest: 0.5,
-      sizeAttenuation: true
-    });
-
-    const starsVertices = [];
-    for (let i = 0; i < 25000; i++) {
-      if (i < 17500) {
-        const x = (Math.random() - 0.5) * 80;
-        const y = (Math.random() - 0.5) * 80;
-        const z = (Math.random() - 0.5) * 80;
-        starsVertices.push(x, y, z);
-      } else {
-        const x = (Math.random() - 0.5) * 150;
-        const y = (Math.random() - 0.5) * 150;
-        const z = (Math.random() - 0.5) * 150;
-        starsVertices.push(x, y, z);
-      }
-    }
-
-    starsGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(starsVertices, 3)
-    );
-
-    stars = new THREE.Points(starsGeometry, starsMaterial);
-    scene.add(stars);
-
-    camera.position.z = 30;
-
-    // Animação
-    function animate() {
-      requestAnimationFrame(animate);
-      globeGroup.rotation.y += 0.0003;
-      stars.rotation.y += 0.00005;
-      renderer.render(scene, camera);
-    }
-
+    initScene();
+    createBlackHole();
+    createParticleGrid();
     animate();
 
     // Responsividade
@@ -164,93 +53,260 @@
     return () => {
       unsubscribe();
       window.removeEventListener('resize', handleResize);
-      container.removeChild(renderer.domElement);
+      if (container && renderer.domElement) {
+        container.removeChild(renderer.domElement);
+      }
+      cancelAnimationFrame(animationFrame);
     };
   });
 
-  function handleAnimation(originalY: number, targetY: number) {
-    const duration = 10000;
-    const start = performance.now();
+  function initScene() {
+    // Inicializa a cena, câmera e renderer
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     
-    function attractionAnimation(currentTime: number) {
-      const elapsed = currentTime - start;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easing = (t: number) => {
-        if (t < 0.3) {
-          return t * t * t;
-        } else if (t < 0.7) {
-          const p = (t - 0.3) / 0.4;
-          return 0.27 + (p * p * 0.4);
-        } else {
-          const p = (t - 0.7) / 0.3;
-          return 0.67 + (Math.pow(p, 3) * 0.33);
-        }
-      };
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Fundo branco
+    renderer.setClearColor(0xffffff, 1);
+    container.appendChild(renderer.domElement);
+    
+    // Posiciona a câmera significativamente mais alta para melhor enquadramento, como na imagem de referência
+    camera.position.z = 30; // Afasta mais a câmera para ter uma visão mais ampla
+    camera.position.y = 15; // Posição bem mais elevada
+    camera.lookAt(new THREE.Vector3(0, 3, 0)); // Mantém o olhar para a esfera central
+    
+    // Adiciona uma luz ambiente sutil
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+  }
 
-      const currentProgress = easing(progress);
-      
-      globeGroup.position.y = originalY + (targetY - originalY) * currentProgress;
-      globeGroup.rotation.y += 0.003 + (currentProgress * 0.01);
-      
-      const positions = (stars.geometry as THREE.BufferGeometry).getAttribute('position').array;
-      const centerY = globeGroup.position.y;
-      
-      const intensityMultiplier = progress < 0.3 
-        ? 1 + (Math.pow(progress/0.3, 2))
-        : progress < 0.7 
-          ? 2 + (Math.pow((progress-0.3)/0.4, 2) * 2)
-          : 4 + (Math.pow((progress-0.7)/0.3, 2) * 4);
-      
-      for (let i = 0; i < positions.length; i += 3) {
-        const x = positions[i];
-        const y = positions[i + 1];
-        const z = positions[i + 2];
-        
-        const dx = x;
-        const dy = y - centerY;
-        const dz = z;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        
-        const baseForce = Math.min(0.015, 1.5 / (distance + 1));
-        const force = baseForce * (
-          progress < 0.3 
-            ? progress * 0.3
-            : progress < 0.7 
-              ? 0.3 + ((progress - 0.3) * 0.7)
-              : 0.7 + ((progress - 0.7) * 2)
-        ) * intensityMultiplier;
-        
-        const speedMultiplier = progress < 0.3 
-          ? 0.02 + (progress * 0.1)
-          : progress < 0.7 
-            ? 0.05 + ((progress - 0.3) * 0.15)
-            : 0.11 + ((progress - 0.7) * 0.25);
-        
-        positions[i] -= dx * force * speedMultiplier;
-        positions[i + 1] -= dy * force * (speedMultiplier * 1.4);
-        positions[i + 2] -= dz * force * speedMultiplier;
-      }
-      
-      (stars.geometry as THREE.BufferGeometry).getAttribute('position').needsUpdate = true;
+  function createBlackHole() {
+    // Cria a esfera central preta
+    const geometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS, 64, 64);
+    const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+    blackHole = new THREE.Mesh(geometry, material);
+    
+    // Posiciona a esfera mais alta, como na imagem de referência
+    blackHole.position.y = 3;
+    
+    // Adiciona um halo visível ao redor da esfera central
+    const haloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1.05, 64, 64);
+    const haloMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x000000, 
+      transparent: true, 
+      opacity: 0.2 
+    });
+    const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+    
+    blackHole.add(halo);
+    
+    // Adiciona um segundo halo mais sutil e maior para criar efeito de atração visual
+    const outerHaloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1.15, 64, 64);
+    const outerHaloMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x000000, 
+      transparent: true, 
+      opacity: 0.1 
+    });
+    const outerHalo = new THREE.Mesh(outerHaloGeometry, outerHaloMaterial);
+    
+    blackHole.add(outerHalo);
+    scene.add(blackHole);
+  }
 
-      if (progress < 1) {
-        requestAnimationFrame(attractionAnimation);
+  function createParticleGrid() {
+    // Cria um grid plano de partículas
+    const vertices = [];
+    const colors = [];
+    
+    // Criar um plano de partículas no padrão de grid com maior espaçamento
+    for (let i = 0; i < GRID_RESOLUTION; i++) {
+      for (let j = 0; j < GRID_RESOLUTION; j++) {
+        const x = (i / (GRID_RESOLUTION - 1) * GRID_SIZE * GRID_SPACING) - (GRID_SIZE * GRID_SPACING / 2);
+        const z = (j / (GRID_RESOLUTION - 1) * GRID_SIZE * GRID_SPACING) - (GRID_SIZE * GRID_SPACING / 2);
+        
+        // Calcula a distância inicial ao centro para definir a altura (y)
+        const distance = Math.sqrt(x * x + z * z);
+        let y = 0;
+        
+        vertices.push(x, y, z);
+        
+        // Define a cor como preta para todas as partículas
+        colors.push(0, 0, 0);
       }
     }
+    
+    // Cria a geometria e atributos para as partículas
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    
+    // Cria uma textura circular para as partículas (para que fiquem esféricas, não quadradas)
+    const particleTexture = createCircleTexture(128);
+    
+    // Cria um material para as partículas esféricas e com tamanho maior
+    const material = new THREE.PointsMaterial({
+      size: 1.04,
+      vertexColors: true,
+      map: particleTexture,
+      transparent: true,
+      opacity: 1.0,
+      alphaTest: 0.2,
+      sizeAttenuation: true
+    });
+    
+    // Cria o sistema de partículas e o adiciona à cena
+    particleSystem = new THREE.Points(geometry, material);
+    scene.add(particleSystem);
+  }
+  
+  // Função para criar uma textura circular para as partículas
+  function createCircleTexture(size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    
+    const context = canvas.getContext('2d');
+    if (!context) return new THREE.Texture();
+    
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2;
+    
+    // Limpa o canvas para garantir transparência
+    context.clearRect(0, 0, size, size);
+    
+    // Desenha um círculo preto com bordas nítidas
+    context.beginPath();
+    context.arc(centerX, centerY, radius * 0.9, 0, 2 * Math.PI, false);
+    
+    // Cria um gradiente radial com menos desfoque para maior nitidez
+    const gradient = context.createRadialGradient(
+      centerX, centerY, 0,
+      centerX, centerY, radius * 0.9
+    );
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+    gradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.9)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    
+    context.fillStyle = gradient;
+    context.fill();
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    
+    return texture;
+  }
+  
+  function animate() {
+    animationFrame = requestAnimationFrame(animate);
 
-    return attractionAnimation;
+    // Rotação lenta do buraco negro
+    if (blackHole) {
+      blackHole.rotation.y += 0.002;
+    }
+    
+    // Atualiza as posições das partículas para simular efeito gravitacional
+    updateParticlePositions();
+    
+    renderer.render(scene, camera);
+  }
+  
+  function updateParticlePositions() {
+    if (!particleSystem) return;
+    
+    const positions = particleSystem.geometry.getAttribute('position');
+    const colors = particleSystem.geometry.getAttribute('color');
+    const vertices = positions.array;
+    
+    // Tempo para criar efeito de onda
+    const time = Date.now() * 0.0005;
+    
+    for (let i = 0; i < vertices.length; i += 3) {
+      const x = vertices[i];
+      const z = vertices[i + 2];
+      
+      // Calcula a distância ao centro (buraco negro)
+      const distance = Math.sqrt(x * x + z * z);
+      
+      // Fator de influência gravitacional - diminui com a distância (ajustado para efeito mais forte)
+      const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.7));
+      
+      // Se estiver em modo de login, aumenta o efeito
+      const loginMultiplier = isLoggingIn ? 3.5 : 1;
+      
+      // Cria um efeito de onda com base na distância e no tempo
+      let waveHeight = 0;
+      
+      if (!isLoggingIn) {
+        // Ondas sutis enquanto não está fazendo login
+        waveHeight = Math.sin(distance * 0.4 - time) * 0.8 * (1 - gravityFactor);
+      } else {
+        // Ondas mais intensas durante o login
+        const loginTimeFactor = (Date.now() - loginStartTime) / loginDuration;
+        const intensityRamp = Math.min(1, loginTimeFactor * 2);
+        
+        waveHeight = Math.sin(distance * 0.6 - time * 3) * 
+                     3 * (1 - gravityFactor) * 
+                     intensityRamp;
+      }
+      
+      // Aplica efeito gravitacional - partículas mais próximas são puxadas para baixo
+      const gravitationalPull = Math.pow(gravityFactor, 2) * 12 * loginMultiplier;
+      
+      // Define nova posição Y (altura)
+      vertices[i + 1] = waveHeight - gravitationalPull;
+      
+      // Mantém a cor preta para todas as partículas
+      colors.array[i] = 0;
+      colors.array[i + 1] = 0;
+      colors.array[i + 2] = 0;
+    }
+    
+    positions.needsUpdate = true;
+    colors.needsUpdate = true;
   }
 
-  function easeInOutQuad(currentTime: number, start: number, change: number, duration: number) {
-    currentTime /= duration / 2;
-    if (currentTime < 1) return change / 2 * currentTime * currentTime + start;
-    currentTime--;
-    return -change / 2 * (currentTime * (currentTime - 2) - 1) + start;
+  let loginStartTime = 0;
+  const loginDuration = 3000; // 3 segundos para a animação completa
+  
+  function startLoginAnimation() {
+    isLoggingIn = true;
+    loginStartTime = Date.now();
+    
+    // Anima a câmera para olhar mais diretamente para o buraco negro
+    animateCameraForLogin();
   }
-
-  function easeOutQuad(t: number): number {
-    return -t * (t - 2);
+  
+  function animateCameraForLogin() {
+    const originalY = camera.position.y;
+    const targetY = 10; // Posição Y mais alta para ver o efeito de cima
+    const originalZ = camera.position.z;
+    const targetZ = 15; // Aproxima um pouco a câmera
+    
+    const startTime = Date.now();
+    const duration = 2000; // 2 segundos para a animação da câmera
+    
+    function updateCamera() {
+      const now = Date.now();
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      
+      // Easing - começa devagar, acelera no meio, termina suave
+      const easeProgress = progress < 0.5 
+        ? 2 * progress * progress 
+        : -1 + (4 - 2 * progress) * progress;
+      
+      camera.position.y = originalY + (targetY - originalY) * easeProgress;
+      camera.position.z = originalZ + (targetZ - originalZ) * easeProgress;
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      
+      if (progress < 1) {
+        requestAnimationFrame(updateCamera);
+      }
+    }
+    
+    updateCamera();
   }
 
   let email = '';
@@ -261,26 +317,29 @@
     loading = true;
     error = '';
 
-    // Inicia a animação
-    const animation = handleAnimation(globeGroup.position.y, -5);
-    requestAnimationFrame(animation);
+    // Inicia a animação de login
+    startLoginAnimation();
 
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        if (userCredential.user) {
-            // Definir cookie de sessão e redirecionar
-            await setSessionCookie();
-            window.location.replace('/hub2');
-        }
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      if (userCredential.user) {
+        // Espera a animação terminar antes de redirecionar
+        setTimeout(async () => {
+          await setSessionCookie();
+          window.location.replace('/hub2');
+        }, 2000);
+      }
     } catch (e: unknown) {
-        if (e instanceof Error) {
-            error = e.message;
-        } else {
-            error = 'Erro desconhecido';
-        }
-        globeGroup.position.y = -12;
+      if (e instanceof Error) {
+        error = e.message;
+      } else {
+        error = 'Erro desconhecido';
+      }
+      isLoggingIn = false;
     } finally {
+      setTimeout(() => {
         loading = false;
+      }, 2000);
     }
   }
 
@@ -288,38 +347,43 @@
     loading = true;
     error = '';
 
-    // Inicia a animação
-    const animation = handleAnimation(globeGroup.position.y, -5);
-    requestAnimationFrame(animation);
+    // Inicia a animação de login
+    startLoginAnimation();
 
     try {
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        
-        if (result.user) {
-            // Definir cookie de sessão e redirecionar
-            await setSessionCookie();
-            window.location.replace('/hub2');
-        }
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      
+      if (result.user) {
+        // Espera a animação terminar antes de redirecionar
+        setTimeout(async () => {
+          await setSessionCookie();
+          window.location.replace('/hub2');
+        }, 2000);
+      }
     } catch (e: unknown) {
-        if (e instanceof Error) {
-            error = e.message;
-        } else {
-            error = 'Erro desconhecido';
-        }
-        globeGroup.position.y = -16;
+      if (e instanceof Error) {
+        error = e.message;
+      } else {
+        error = 'Erro desconhecido';
+      }
+      isLoggingIn = false;
     } finally {
+      setTimeout(() => {
         loading = false;
+      }, 2000);
     }
   }
 </script>
 
-<div class="relative w-full h-screen bg-black">
+<div class="relative w-full h-screen bg-white overflow-hidden">
   <div bind:this={container} class="absolute inset-0 z-0"></div>
   
-  <div class="relative z-10 flex items-center justify-center min-h-screen -mt-20">
-    <div class="w-full max-w-md p-8 space-y-6 bg-black/30 backdrop-blur-lg rounded-lg shadow-xl border border-white/10">
-      <h2 class="text-3xl font-bold text-center text-white">Login</h2>
+  <div class="relative z-10 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white/20 backdrop-blur-sm rounded-lg shadow-xl border border-black/10">
+      <div class="flex justify-center mb-6">
+        <h2 class="text-3xl font-bold text-center text-black">Gravity Group</h2>
+      </div>
       
       {#if error}
         <div class="p-3 text-sm text-red-200 bg-red-900/50 rounded-md">
@@ -329,23 +393,23 @@
 
       <form class="space-y-4" on:submit={handleSubmit}>
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-200">Email</label>
+          <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
           <input
             type="email"
             id="email"
             name="email"
-            class="w-full px-3 py-2 mt-1 text-white bg-black/50 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50"
+            class="w-full px-3 py-2 mt-1 text-black bg-white/80 border border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             placeholder="seu@email.com"
             bind:value={email}
           />
         </div>
         <div>
-          <label for="password" class="block text-sm font-medium text-gray-200">Senha</label>
+          <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
           <input
             type="password"
             id="password"
             name="password"
-            class="w-full px-3 py-2 mt-1 text-white bg-black/50 border border-white/20 rounded-md focus:outline-none focus:ring-2 focus:ring-white/50"
+            class="w-full px-3 py-2 mt-1 text-black bg-white/80 border border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             placeholder="********"
             bind:value={password}
           />
@@ -353,7 +417,7 @@
         <button
           type="submit"
           disabled={loading}
-          class="w-full px-4 py-2 text-black bg-white rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black transition-colors disabled:opacity-50"
+          class="w-full px-4 py-2 text-white bg-gradient-to-r from-purple-800 to-indigo-900 rounded-md hover:from-purple-700 hover:to-indigo-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-white transition-colors disabled:opacity-50"
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
@@ -361,17 +425,17 @@
 
       <div class="relative">
         <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-white/10"></div>
+          <div class="w-full border-t border-black/10"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="px-2 text-gray-300 bg-black">Ou continue com</span>
+          <span class="px-2 text-gray-700 bg-white">Ou continue com</span>
         </div>
       </div>
 
       <button
         on:click={handleGoogleLogin}
         disabled={loading}
-        class="w-full px-4 py-2 flex items-center justify-center space-x-2 text-white bg-transparent border border-white/20 rounded-md hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/50 transition-colors"
+        class="w-full px-4 py-2 flex items-center justify-center space-x-2 text-black bg-white border border-black/20 rounded-md hover:bg-black/5 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-colors"
       >
         <svg class="w-5 h-5" viewBox="0 0 24 24">
           <path
@@ -401,11 +465,26 @@
   :global(body) {
     margin: 0;
     overflow: hidden;
-    background: black;
+    background: white;
   }
 
   input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Efeitos de transição suave para botões e elementos de formulário */
+  button, input {
+    transition: all 0.3s ease;
+  }
+  
+  button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(128, 90, 213, 0.3);
+  }
+  
+  input:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(128, 90, 213, 0.2);
   }
 </style>
   
