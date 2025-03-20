@@ -21,12 +21,12 @@
   let isLoggingIn = false;
   
   // Configurações do sistema de partículas
-  const GRID_SIZE = 40;
-  const GRID_RESOLUTION = 60;
+  const GRID_SIZE = 100;
+  const GRID_RESOLUTION = 70;
   const PARTICLE_COUNT = GRID_RESOLUTION * GRID_RESOLUTION;
-  const BLACK_HOLE_RADIUS = 3.5;
+  const BLACK_HOLE_RADIUS = 8;
   const MAX_DISTANCE = Math.sqrt(GRID_SIZE * GRID_SIZE * 2);
-  const GRID_SPACING = 1.5; // Aumento do espaçamento entre partículas
+  const GRID_SPACING = 2.5;
   
   onMount(() => {
     // Verifica se já está autenticado
@@ -68,13 +68,13 @@
     
     renderer.setSize(window.innerWidth, window.innerHeight);
     // Fundo branco
-    renderer.setClearColor(0xffffff, 1);
+    (renderer as any).setClearColor(0xffffff, 1);
     container.appendChild(renderer.domElement);
     
     // Posiciona a câmera significativamente mais alta para melhor enquadramento, como na imagem de referência
-    camera.position.z = 30; // Afasta mais a câmera para ter uma visão mais ampla
-    camera.position.y = 15; // Posição bem mais elevada
-    camera.lookAt(new THREE.Vector3(0, 3, 0)); // Mantém o olhar para a esfera central
+    camera.position.z = 70; // Afasta mais a câmera para ter uma visão mais ampla
+    camera.position.y = 5; // Posição bem mais elevada
+    (camera as any).lookAt(0, 1, 0); // Mantém o olhar para a esfera central
     
     // Adiciona uma luz ambiente sutil
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -83,34 +83,45 @@
 
   function createBlackHole() {
     // Cria a esfera central preta
-    const geometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS, 64, 64);
+    const geometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS, 50, 50);
     const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
     blackHole = new THREE.Mesh(geometry, material);
     
     // Posiciona a esfera mais alta, como na imagem de referência
-    blackHole.position.y = 3;
+    blackHole.position.y = 5;
     
     // Adiciona um halo visível ao redor da esfera central
-    const haloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1.05, 64, 64);
+    const haloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 0.6, 50, 50);
     const haloMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x000000, 
       transparent: true, 
-      opacity: 0.2 
+      opacity: 0.3 
     });
     const halo = new THREE.Mesh(haloGeometry, haloMaterial);
     
     blackHole.add(halo);
     
     // Adiciona um segundo halo mais sutil e maior para criar efeito de atração visual
-    const outerHaloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1.15, 64, 64);
+    const outerHaloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1, 50, 50);
     const outerHaloMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x000000, 
       transparent: true, 
-      opacity: 0.1 
+      opacity: 0.15 
     });
     const outerHalo = new THREE.Mesh(outerHaloGeometry, outerHaloMaterial);
     
+    // Adiciona um terceiro halo ainda maior e mais sutil
+    const farHaloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1, 50, 50);
+    const farHaloMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x000000, 
+      transparent: true, 
+      opacity: 0.05 
+    });
+    const farHalo = new THREE.Mesh(farHaloGeometry, farHaloMaterial);
+    
+    blackHole.add(halo);
     blackHole.add(outerHalo);
+    blackHole.add(farHalo);
     scene.add(blackHole);
   }
 
@@ -123,7 +134,7 @@
     for (let i = 0; i < GRID_RESOLUTION; i++) {
       for (let j = 0; j < GRID_RESOLUTION; j++) {
         const x = (i / (GRID_RESOLUTION - 1) * GRID_SIZE * GRID_SPACING) - (GRID_SIZE * GRID_SPACING / 2);
-        const z = (j / (GRID_RESOLUTION - 1) * GRID_SIZE * GRID_SPACING) - (GRID_SIZE * GRID_SPACING / 2);
+        const z = (j / (GRID_RESOLUTION - 1) * GRID_SIZE * GRID_SPACING) - (GRID_SIZE * GRID_SPACING / 2.5);
         
         // Calcula a distância inicial ao centro para definir a altura (y)
         const distance = Math.sqrt(x * x + z * z);
@@ -146,7 +157,7 @@
     
     // Cria um material para as partículas esféricas e com tamanho maior
     const material = new THREE.PointsMaterial({
-      size: 1.04,
+      size: 2,
       vertexColors: true,
       map: particleTexture,
       transparent: true,
@@ -219,40 +230,51 @@
     const colors = particleSystem.geometry.getAttribute('color');
     const vertices = positions.array;
     
-    // Tempo para criar efeito de onda
-    const time = Date.now() * 0.0005;
+    // Tempo mais lento para ondulações mais suaves
+    const time = Date.now() * 0.0002;
     
     for (let i = 0; i < vertices.length; i += 3) {
       const x = vertices[i];
       const z = vertices[i + 2];
       
-      // Calcula a distância ao centro (buraco negro)
+      // Calcula a distância ao centro
       const distance = Math.sqrt(x * x + z * z);
       
-      // Fator de influência gravitacional - diminui com a distância (ajustado para efeito mais forte)
-      const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.7));
+      // Calcula o ângulo em relação ao centro
+      const angle = Math.atan2(z, x);
+      
+      // Fator de influência gravitacional reduzido
+      const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.6)); // Aumentado de 0.4 para 0.6 para suavizar
       
       // Se estiver em modo de login, aumenta o efeito
-      const loginMultiplier = isLoggingIn ? 3.5 : 1;
+      const loginMultiplier = isLoggingIn ? 3 : 1; // Reduzido de 5 para 3
       
       // Cria um efeito de onda com base na distância e no tempo
       let waveHeight = 0;
       
       if (!isLoggingIn) {
-        // Ondas sutis enquanto não está fazendo login
-        waveHeight = Math.sin(distance * 0.4 - time) * 0.8 * (1 - gravityFactor);
+        // Padrão de ondas mais radial, com menos movimento no eixo Z
+        waveHeight = (
+          // Onda radial principal - mais forte
+          Math.sin(distance * 0.15 - time) * 3.0 +
+          // Ondas circulares concêntricas - mais suaves
+          Math.sin(distance * 0.3 - time * 0.8) * 0.8 +
+          // Ondulação angular reduzida
+          Math.sin(angle * 12 + distance * 0.05) * 0.3
+        ) * Math.pow(1 - gravityFactor, 0.6); // Reduzido de 0.8 para 0.6 para suavizar a queda
       } else {
-        // Ondas mais intensas durante o login
+        // Efeito de login mantendo o padrão radial
         const loginTimeFactor = (Date.now() - loginStartTime) / loginDuration;
         const intensityRamp = Math.min(1, loginTimeFactor * 2);
         
-        waveHeight = Math.sin(distance * 0.6 - time * 3) * 
-                     3 * (1 - gravityFactor) * 
-                     intensityRamp;
+        waveHeight = (
+          Math.sin(distance * 0.2 - time * 2) * 4.0 +
+          Math.sin(angle * 16 + distance * 0.1) * 1.0
+        ) * Math.pow(1 - gravityFactor, 0.5) * intensityRamp; // Reduzido de 0.7 para 0.5
       }
       
-      // Aplica efeito gravitacional - partículas mais próximas são puxadas para baixo
-      const gravitationalPull = Math.pow(gravityFactor, 2) * 12 * loginMultiplier;
+      // Efeito gravitacional reduzido
+      const gravitationalPull = Math.pow(gravityFactor, 2) * 15 * loginMultiplier; // Reduzido de 2.5 para 2 e de 25 para 15
       
       // Define nova posição Y (altura)
       vertices[i + 1] = waveHeight - gravitationalPull;
@@ -280,9 +302,9 @@
   
   function animateCameraForLogin() {
     const originalY = camera.position.y;
-    const targetY = 10; // Posição Y mais alta para ver o efeito de cima
+    const targetY = 5; // Posição Y mais alta para ver o efeito de cima
     const originalZ = camera.position.z;
-    const targetZ = 15; // Aproxima um pouco a câmera
+    const targetZ = 20; // Aproxima um pouco a câmera
     
     const startTime = Date.now();
     const duration = 2000; // 2 segundos para a animação da câmera
@@ -299,7 +321,7 @@
       
       camera.position.y = originalY + (targetY - originalY) * easeProgress;
       camera.position.z = originalZ + (targetZ - originalZ) * easeProgress;
-      camera.lookAt(new THREE.Vector3(0, 0, 0));
+      (camera as any).lookAt(0, 0, 0);
       
       if (progress < 1) {
         requestAnimationFrame(updateCamera);
@@ -382,7 +404,11 @@
   <div class="relative z-10 flex items-center justify-center min-h-screen">
     <div class="w-full max-w-md p-8 space-y-6 bg-white/20 backdrop-blur-sm rounded-lg shadow-xl border border-black/10">
       <div class="flex justify-center mb-6">
-        <h2 class="text-3xl font-bold text-center text-black">Gravity Group</h2>
+        <img 
+          src="/images/Logo Redondo Preto - Sem Fundo.png" 
+          alt="Gravity Logo" 
+          class="h-[120px] w-auto"
+        />
       </div>
       
       {#if error}
