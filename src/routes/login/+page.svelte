@@ -21,12 +21,12 @@
   let isLoggingIn = false;
   
   // Configurações do sistema de partículas
-  const GRID_SIZE = 100;
-  const GRID_RESOLUTION = 70;
+  const GRID_SIZE = 400;
+  const GRID_RESOLUTION = 220;
   const PARTICLE_COUNT = GRID_RESOLUTION * GRID_RESOLUTION;
   const BLACK_HOLE_RADIUS = 8;
   const MAX_DISTANCE = Math.sqrt(GRID_SIZE * GRID_SIZE * 2);
-  const GRID_SPACING = 2.5;
+  const GRID_SPACING = 2.0;
   
   onMount(() => {
     // Verifica se já está autenticado
@@ -61,67 +61,56 @@
   });
 
   function initScene() {
-    // Inicializa a cena, câmera e renderer
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 3000);
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     
     renderer.setSize(window.innerWidth, window.innerHeight);
-    // Fundo branco
     (renderer as any).setClearColor(0xffffff, 1);
     container.appendChild(renderer.domElement);
     
-    // Posiciona a câmera significativamente mais alta para melhor enquadramento, como na imagem de referência
-    camera.position.z = 70; // Afasta mais a câmera para ter uma visão mais ampla
-    camera.position.y = 5; // Posição bem mais elevada
-    (camera as any).lookAt(0, 1, 0); // Mantém o olhar para a esfera central
+    // Posiciona a câmera para melhor perspectiva
+    camera.position.z = 80;
+    camera.position.y = 5;
+    (camera as any).lookAt(0, 1, 0);
     
-    // Adiciona uma luz ambiente sutil
+    // Ajusta o fog para criar efeito de fade mais suave no infinito
+    (scene as any).fog = new THREE.Fog(0xffffff, 200, 800);
+    
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
   }
 
   function createBlackHole() {
     // Cria a esfera central preta
-    const geometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS, 50, 50);
+    const geometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS, 200, 200);
     const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
     blackHole = new THREE.Mesh(geometry, material);
     
-    // Posiciona a esfera mais alta, como na imagem de referência
-    blackHole.position.y = 5;
+    // Posiciona a esfera mais alta
+    blackHole.position.y = 15;
     
     // Adiciona um halo visível ao redor da esfera central
     const haloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 0.6, 50, 50);
     const haloMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x000000, 
       transparent: true, 
-      opacity: 0.3 
+      opacity: 0.2 
     });
     const halo = new THREE.Mesh(haloGeometry, haloMaterial);
     
     blackHole.add(halo);
     
-    // Adiciona um segundo halo mais sutil e maior para criar efeito de atração visual
+    // Adiciona um segundo halo mais sutil e maior
     const outerHaloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1, 50, 50);
     const outerHaloMaterial = new THREE.MeshBasicMaterial({ 
       color: 0x000000, 
       transparent: true, 
-      opacity: 0.15 
+      opacity: 0.1 
     });
     const outerHalo = new THREE.Mesh(outerHaloGeometry, outerHaloMaterial);
     
-    // Adiciona um terceiro halo ainda maior e mais sutil
-    const farHaloGeometry = new THREE.SphereGeometry(BLACK_HOLE_RADIUS * 1, 50, 50);
-    const farHaloMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0x000000, 
-      transparent: true, 
-      opacity: 0.05 
-    });
-    const farHalo = new THREE.Mesh(farHaloGeometry, farHaloMaterial);
-    
-    blackHole.add(halo);
     blackHole.add(outerHalo);
-    blackHole.add(farHalo);
     scene.add(blackHole);
   }
 
@@ -142,7 +131,9 @@
         
         vertices.push(x, y, z);
         
-        // Define a cor como preta para todas as partículas
+        // Define a cor como preta para todas as partículas com fade baseado na distância
+        const distanceFade = Math.max(0, 1 - (distance / (GRID_SIZE * 1.2)));
+        const intensity = 0.15 + (distanceFade * 0.85);
         colors.push(0, 0, 0);
       }
     }
@@ -152,10 +143,10 @@
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     
-    // Cria uma textura circular para as partículas (para que fiquem esféricas, não quadradas)
+    // Cria uma textura circular para as partículas
     const particleTexture = createCircleTexture(128);
     
-    // Cria um material para as partículas esféricas e com tamanho maior
+    // Cria um material para as partículas com fade na distância
     const material = new THREE.PointsMaterial({
       size: 2,
       vertexColors: true,
@@ -163,7 +154,8 @@
       transparent: true,
       opacity: 1.0,
       alphaTest: 0.2,
-      sizeAttenuation: true
+      sizeAttenuation: true,
+      fog: true // Habilita o efeito de fog no material
     });
     
     // Cria o sistema de partículas e o adiciona à cena
@@ -223,6 +215,13 @@
     renderer.render(scene, camera);
   }
   
+  let baseWaveLength = 40;
+  let baseAmplitude = 3;
+  let waveSpeed = 0.8;
+  let animationProgress = 0;
+  let animationStartTime = 0;
+  const ANIMATION_DURATION = 2000;
+
   function updateParticlePositions() {
     if (!particleSystem) return;
     
@@ -230,105 +229,80 @@
     const colors = particleSystem.geometry.getAttribute('color');
     const vertices = positions.array;
     
-    // Tempo mais lento para ondulações mais suaves
-    const time = Date.now() * 0.0002;
+    const time = Date.now() * 0.0002 * waveSpeed;
+    
+    // Calcula a progressão da animação
+    if (isLoggingIn) {
+      const elapsed = Date.now() - animationStartTime;
+      animationProgress = Math.min(1, elapsed / ANIMATION_DURATION);
+    } else {
+      const elapsed = Date.now() - animationStartTime;
+      animationProgress = Math.max(0, 1 - elapsed / ANIMATION_DURATION);
+    }
+    
+    const easeProgress = easeInOutCubic(animationProgress);
+    const currentWaveLength = baseWaveLength * (1 - (easeProgress * 0.3));
+    const currentAmplitude = baseAmplitude * (1 + (easeProgress * 2));
     
     for (let i = 0; i < vertices.length; i += 3) {
       const x = vertices[i];
       const z = vertices[i + 2];
       
-      // Calcula a distância ao centro
       const distance = Math.sqrt(x * x + z * z);
-      
-      // Calcula o ângulo em relação ao centro
       const angle = Math.atan2(z, x);
       
-      // Fator de influência gravitacional reduzido
-      const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.6)); // Aumentado de 0.4 para 0.6 para suavizar
+      // Ajusta o raio de influência e suavização
+      const influenceRadius = BLACK_HOLE_RADIUS * 6;
+      const sphereProximity = Math.max(0, 1 - (distance / influenceRadius));
+      const gravityFactor = Math.pow(10 - Math.min(1, distance / (GRID_SIZE * 0.8)), 0.7);
       
-      // Se estiver em modo de login, aumenta o efeito
-      const loginMultiplier = isLoggingIn ? 3 : 1; // Reduzido de 5 para 3
+      // Cria ondas mais naturais combinando diferentes frequências
+      const baseWave = Math.sin(distance / currentWaveLength - time * 3) * currentAmplitude;
+      const secondaryWave = Math.sin(distance / (currentWaveLength * 0.6) - time * 2) * (currentAmplitude * 0.4);
+      const tertiaryWave = Math.sin(angle * 3 + distance / (currentWaveLength * 0.3) - time) * (currentAmplitude * 0.2);
       
-      // Cria um efeito de onda com base na distância e no tempo
-      let waveHeight = 0;
+      // Combina as ondas com pesos diferentes baseados na distância
+      const waveIntensity = 1 - (sphereProximity * 0.7);
+      const combinedWave = (baseWave + secondaryWave + tertiaryWave) * waveIntensity;
       
-      if (!isLoggingIn) {
-        // Padrão de ondas mais radial, com menos movimento no eixo Z
-        waveHeight = (
-          // Onda radial principal - mais forte
-          Math.sin(distance * 0.15 - time) * 3.0 +
-          // Ondas circulares concêntricas - mais suaves
-          Math.sin(distance * 0.3 - time * 0.8) * 0.8 +
-          // Ondulação angular reduzida
-          Math.sin(angle * 12 + distance * 0.05) * 0.3
-        ) * Math.pow(1 - gravityFactor, 0.6); // Reduzido de 0.8 para 0.6 para suavizar a queda
-      } else {
-        // Efeito de login mantendo o padrão radial
-        const loginTimeFactor = (Date.now() - loginStartTime) / loginDuration;
-        const intensityRamp = Math.min(1, loginTimeFactor * 2);
-        
-        waveHeight = (
-          Math.sin(distance * 0.2 - time * 2) * 4.0 +
-          Math.sin(angle * 16 + distance * 0.1) * 1.0
-        ) * Math.pow(1 - gravityFactor, 0.5) * intensityRamp; // Reduzido de 0.7 para 0.5
-      }
+      // Adiciona depressão suave próxima à esfera
+      const depression = sphereProximity * BLACK_HOLE_RADIUS * 0.3;
       
-      // Efeito gravitacional reduzido
-      const gravitationalPull = Math.pow(gravityFactor, 2) * 15 * loginMultiplier; // Reduzido de 2.5 para 2 e de 25 para 15
+      // Altura final com transição suave
+      const finalHeight = (combinedWave * gravityFactor) - depression;
+      vertices[i + 1] = finalHeight;
       
-      // Define nova posição Y (altura)
-      vertices[i + 1] = waveHeight - gravitationalPull;
+      // Ajusta cores com base na altura e proximidade
+      const heightFactor = Math.abs(finalHeight) / (currentAmplitude * 1.5);
+      const proximityFactor = Math.pow(sphereProximity, 2);
+      const colorIntensity = (heightFactor * 0.5 + proximityFactor * 0.5) * 0.8;
       
-      // Mantém a cor preta para todas as partículas
-      colors.array[i] = 0;
-      colors.array[i + 1] = 0;
-      colors.array[i + 2] = 0;
+      colors.array[i] = colorIntensity;
+      colors.array[i + 1] = colorIntensity;
+      colors.array[i + 2] = colorIntensity;
     }
     
     positions.needsUpdate = true;
     colors.needsUpdate = true;
   }
 
-  let loginStartTime = 0;
-  const loginDuration = 3000; // 3 segundos para a animação completa
-  
+  // Função de easing para suavizar a transição
+  function easeInOutCubic(x: number): number {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  }
+
+  // Função para iniciar a animação de login
   function startLoginAnimation() {
     isLoggingIn = true;
-    loginStartTime = Date.now();
+    animationStartTime = Date.now();
+    waveSpeed = 2;
     
-    // Anima a câmera para olhar mais diretamente para o buraco negro
-    animateCameraForLogin();
-  }
-  
-  function animateCameraForLogin() {
-    const originalY = camera.position.y;
-    const targetY = 5; // Posição Y mais alta para ver o efeito de cima
-    const originalZ = camera.position.z;
-    const targetZ = 20; // Aproxima um pouco a câmera
-    
-    const startTime = Date.now();
-    const duration = 2000; // 2 segundos para a animação da câmera
-    
-    function updateCamera() {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      
-      // Easing - começa devagar, acelera no meio, termina suave
-      const easeProgress = progress < 0.5 
-        ? 2 * progress * progress 
-        : -1 + (4 - 2 * progress) * progress;
-      
-      camera.position.y = originalY + (targetY - originalY) * easeProgress;
-      camera.position.z = originalZ + (targetZ - originalZ) * easeProgress;
-      (camera as any).lookAt(0, 0, 0);
-      
-      if (progress < 1) {
-        requestAnimationFrame(updateCamera);
-      }
-    }
-    
-    updateCamera();
+    // Retorna ao normal após 10 segundos
+    setTimeout(() => {
+      isLoggingIn = false;
+      animationStartTime = Date.now();
+      waveSpeed = 1;
+    }, 10000);
   }
 
   let email = '';
@@ -407,7 +381,7 @@
         <img 
           src="/images/Logo Redondo Preto - Sem Fundo.png" 
           alt="Gravity Logo" 
-          class="h-[120px] w-auto"
+          class="h-[240px] w-auto"
         />
       </div>
       
