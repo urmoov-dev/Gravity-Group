@@ -1,6 +1,8 @@
 <!-- TopBar.svelte -->
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { auth } from '$lib/firebase';
+    import { goto } from '$app/navigation';
     export let activeSection: string;
 
     const sections = [
@@ -37,6 +39,16 @@
         if (strength >= 90) return 'text-green-400';
         if (strength >= 70) return 'text-blue-400';
         return 'text-yellow-400';
+    }
+
+    // Função para fazer logout
+    async function handleLogout() {
+        try {
+            await auth.signOut();
+            goto('/login');
+        } catch (error) {
+            console.error('Erro ao fazer logout:', error);
+        }
     }
 </script>
 
@@ -81,19 +93,40 @@
                 {/each}
             </div>
 
-            <!-- Força da Conexão -->
-            <div class="flex items-center space-x-2">
-                <span class="text-gray-400 text-sm">SINAL</span>
-                <div class="flex space-x-0.5">
-                    {#each Array(4) as _, i}
-                        <div 
-                            class="w-1 h-3 rounded-sm transition-all duration-300 {
-                                connectionStrength > (i + 1) * 25 
-                                    ? getConnectionClass(connectionStrength)
-                                    : 'bg-gray-600'
-                            }"
-                        ></div>
-                    {/each}
+            <!-- Força da Conexão e Perfil -->
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span class="text-gray-400 text-sm">SINAL</span>
+                    <div class="flex space-x-0.5">
+                        {#each Array(4) as _, i}
+                            <div 
+                                class="w-1 h-3 rounded-sm transition-all duration-300 {
+                                    connectionStrength > (i + 1) * 25 
+                                        ? getConnectionClass(connectionStrength)
+                                        : 'bg-gray-600'
+                                }"
+                            ></div>
+                        {/each}
+                    </div>
+                </div>
+
+                <!-- Botão de Perfil/Sair -->
+                <div class="relative group">
+                    <button 
+                        class="flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-300
+                               text-gray-400 hover:text-white hover:bg-blue-500/20"
+                    >
+                        <span class="text-lg">👤</span>
+                        <span class="font-mono text-sm">PERFIL</span>
+                    </button>
+                    <div class="absolute right-0 mt-2 w-48 py-2 bg-black/80 backdrop-blur-xl border border-blue-500/20 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <button
+                            on:click={handleLogout}
+                            class="w-full px-4 py-2 text-left text-gray-400 hover:text-white hover:bg-blue-500/20 transition-colors duration-300"
+                        >
+                            <span class="font-mono text-sm">SAIR</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </nav>

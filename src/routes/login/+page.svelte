@@ -32,7 +32,7 @@
     // Verifica se já está autenticado
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        goto('/hub');
+        goto('/hub2');
       }
     });
 
@@ -223,112 +223,12 @@
     renderer.render(scene, camera);
   }
   
-  function updateParticlePositions() {
-    if (!particleSystem) return;
-    
-    const positions = particleSystem.geometry.getAttribute('position');
-    const colors = particleSystem.geometry.getAttribute('color');
-    const vertices = positions.array;
-    
-    // Tempo mais lento para ondulações mais suaves
-    const time = Date.now() * 0.0002;
-    
-    for (let i = 0; i < vertices.length; i += 3) {
-      const x = vertices[i];
-      const z = vertices[i + 2];
-      
-      // Calcula a distância ao centro
-      const distance = Math.sqrt(x * x + z * z);
-      
-      // Calcula o ângulo em relação ao centro
-      const angle = Math.atan2(z, x);
-      
-      // Fator de influência gravitacional reduzido
-      const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.6)); // Aumentado de 0.4 para 0.6 para suavizar
-      
-      // Se estiver em modo de login, aumenta o efeito
-      const loginMultiplier = isLoggingIn ? 3 : 1; // Reduzido de 5 para 3
-      
-      // Cria um efeito de onda com base na distância e no tempo
-      let waveHeight = 0;
-      
-      if (!isLoggingIn) {
-        // Padrão de ondas mais radial, com menos movimento no eixo Z
-        waveHeight = (
-          // Onda radial principal - mais forte
-          Math.sin(distance * 0.15 - time) * 3.0 +
-          // Ondas circulares concêntricas - mais suaves
-          Math.sin(distance * 0.3 - time * 0.8) * 0.8 +
-          // Ondulação angular reduzida
-          Math.sin(angle * 12 + distance * 0.05) * 0.3
-        ) * Math.pow(1 - gravityFactor, 0.6); // Reduzido de 0.8 para 0.6 para suavizar a queda
-      } else {
-        // Efeito de login mantendo o padrão radial
-        const loginTimeFactor = (Date.now() - loginStartTime) / loginDuration;
-        const intensityRamp = Math.min(1, loginTimeFactor * 2);
-        
-        waveHeight = (
-          Math.sin(distance * 0.2 - time * 2) * 4.0 +
-          Math.sin(angle * 16 + distance * 0.1) * 1.0
-        ) * Math.pow(1 - gravityFactor, 0.5) * intensityRamp; // Reduzido de 0.7 para 0.5
-      }
-      
-      // Efeito gravitacional reduzido
-      const gravitationalPull = Math.pow(gravityFactor, 2) * 15 * loginMultiplier; // Reduzido de 2.5 para 2 e de 25 para 15
-      
-      // Define nova posição Y (altura)
-      vertices[i + 1] = waveHeight - gravitationalPull;
-      
-      // Mantém a cor preta para todas as partículas
-      colors.array[i] = 0;
-      colors.array[i + 1] = 0;
-      colors.array[i + 2] = 0;
-    }
-    
-    positions.needsUpdate = true;
-    colors.needsUpdate = true;
-  }
-
   let loginStartTime = 0;
-  const loginDuration = 3000; // 3 segundos para a animação completa
+  const loginDuration = 10000; // Aumentado para 10 segundos
   
   function startLoginAnimation() {
     isLoggingIn = true;
     loginStartTime = Date.now();
-    
-    // Anima a câmera para olhar mais diretamente para o buraco negro
-    animateCameraForLogin();
-  }
-  
-  function animateCameraForLogin() {
-    const originalY = camera.position.y;
-    const targetY = 5; // Posição Y mais alta para ver o efeito de cima
-    const originalZ = camera.position.z;
-    const targetZ = 20; // Aproxima um pouco a câmera
-    
-    const startTime = Date.now();
-    const duration = 2000; // 2 segundos para a animação da câmera
-    
-    function updateCamera() {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      
-      // Easing - começa devagar, acelera no meio, termina suave
-      const easeProgress = progress < 0.5 
-        ? 2 * progress * progress 
-        : -1 + (4 - 2 * progress) * progress;
-      
-      camera.position.y = originalY + (targetY - originalY) * easeProgress;
-      camera.position.z = originalZ + (targetZ - originalZ) * easeProgress;
-      (camera as any).lookAt(0, 0, 0);
-      
-      if (progress < 1) {
-        requestAnimationFrame(updateCamera);
-      }
-    }
-    
-    updateCamera();
   }
 
   let email = '';
@@ -395,6 +295,74 @@
         loading = false;
       }, 2000);
     }
+  }
+
+  function updateParticlePositions() {
+    if (!particleSystem) return;
+    
+    const positions = particleSystem.geometry.getAttribute('position');
+    const colors = particleSystem.geometry.getAttribute('color');
+    const vertices = positions.array;
+    
+    const time = Date.now() * 0.0002;
+    
+    for (let i = 0; i < vertices.length; i += 3) {
+      const x = vertices[i];
+      const z = vertices[i + 2];
+      
+      const distance = Math.sqrt(x * x + z * z);
+      const angle = Math.atan2(z, x);
+      
+      let waveHeight = 0;
+      
+      if (!isLoggingIn) {
+        // Comportamento normal das ondas
+        const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.6));
+        waveHeight = (
+          Math.sin(distance * 0.15 - time) * 3.0 +
+          Math.sin(distance * 0.3 - time * 0.8) * 0.8 +
+          Math.sin(angle * 12 + distance * 0.05) * 0.3
+        ) * Math.pow(1 - gravityFactor, 0.6);
+        
+        const gravitationalPull = Math.pow(gravityFactor, 2) * 15;
+        vertices[i + 1] = waveHeight - gravitationalPull;
+      } else {
+        // Efeito de pulso que aumenta a amplitude das ondas
+        const loginProgress = Math.min(1, (Date.now() - loginStartTime) / loginDuration);
+        
+        // Calcula a intensidade do pulso baseado no progresso do login
+        const pulseIntensity = Math.sin(loginProgress * Math.PI) * 2; // Pico no meio da animação
+        
+        // Aumenta a amplitude das ondas durante o login
+        const waveAmplitude = 3.0 + pulseIntensity * 8.0; // Aumentado de 4.0 para 8.0
+        const gravityFactor = 1 - Math.min(1, distance / (GRID_SIZE * 0.8)); // Aumentado área de influência
+        
+        // Ondas mais largas e com maior amplitude
+        waveHeight = (
+          Math.sin(distance * 0.08 - time) * waveAmplitude + // Frequência reduzida de 0.15 para 0.08
+          Math.sin(distance * 0.15 - time * 0.8) * (waveAmplitude * 0.5) + // Frequência reduzida de 0.3 para 0.15
+          Math.sin(angle * 6 + distance * 0.03) * (waveAmplitude * 0.3) // Reduzido de 12 para 6 e 0.05 para 0.03
+        ) * Math.pow(1 - gravityFactor, 0.4); // Reduzido de 0.6 para 0.4 para ondas mais amplas
+        
+        // Mantém o efeito gravitacional base, mas mais suave
+        const gravitationalPull = Math.pow(gravityFactor, 1.5) * 12; // Reduzido de 2 para 1.5 e 15 para 12
+        
+        // Aplica a altura final
+        vertices[i + 1] = waveHeight - gravitationalPull;
+        
+        // Mantém as posições X e Z originais
+        vertices[i] = x;
+        vertices[i + 2] = z;
+      }
+      
+      // Mantém a cor preta para todas as partículas
+      colors.array[i] = 0;
+      colors.array[i + 1] = 0;
+      colors.array[i + 2] = 0;
+    }
+    
+    positions.needsUpdate = true;
+    colors.needsUpdate = true;
   }
 </script>
 
