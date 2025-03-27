@@ -1,154 +1,278 @@
 <script lang="ts">
-    import { TopBar, CockpitWindow, HologramDisplay, PlanetaryBackground } from '$lib/components/hub2';
-    import { profile } from '$lib/stores/profile';
-    import { goto } from '$app/navigation';
+	import { formatCurrency } from '$lib/utils/format';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { auth } from '$lib/firebase';
+	import { fade, fly } from 'svelte/transition';
 
-    let activeSection = 'overview';
+	// Componentes importados
+	import PilotStatus from '$lib/components/hub2/PilotStatus.svelte';
+	import MarketRadar from '$lib/components/hub2/MarketRadar.svelte';
+	import TacticalAnalysis from '$lib/components/hub2/TacticalAnalysis.svelte';
+	import ModernBackground from '$lib/components/ModernBackground.svelte';
 
-    function formatCurrency(value: number): string {
-        return value.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        });
-    }
+	// Dados do usuário
+	let userProfile = {
+		name: 'Comandante',
+		avatar: '/images/default-avatar.png',
+		balance: 125000,
+		level: 2,
+		rank: 'Explorador Estelar'
+	};
 
-    function handleProfileClick() {
-        goto('/profile');
-    }
+	// Função para formatar moeda
+	function formatMoney(value: number): string {
+		return formatCurrency(value);
+	}
+
+	// Função para lidar com o clique no perfil
+	function handleProfileClick() {
+		goto('/profile');
+	}
+
+	// Verificação de autenticação
+	onMount(() => {
+		auth.onAuthStateChanged((user) => {
+			if (!user) {
+				goto('/login');
+			} else {
+				// Aqui você atualizaria os dados do usuário com dados reais
+				// userProfile = ... (dados do firebase)
+			}
+		});
+	});
 </script>
 
-<div class="relative min-h-screen bg-black overflow-hidden">
-    <!-- Background com efeito espacial -->
-    <PlanetaryBackground />
+<div class="hub-container">
+	<!-- Fundo moderno e neutro -->
+	<ModernBackground />
+	
+	<!-- Overlay de gradiente sutil -->
+	<div class="gradient-overlay"></div>
 
-    <!-- Interface do Cockpit -->
-    <div class="relative z-10 min-h-screen flex flex-col">
-        <!-- Barra superior com status -->
-        <TopBar {activeSection} />
+	<!-- Barra superior -->
+	<div class="top-bar" transition:fade={{ duration: 300 }}>
+		<div class="logo">
+			<img src="/images/gravity-logo.png" alt="Gravity Group" />
+			<span class="logo-text">GRAVITY HUB</span>
+		</div>
+		
+		<div class="user-profile" on:click={handleProfileClick} on:keydown={event => event.key === 'Enter' && handleProfileClick()}>
+			<div class="profile-info">
+				<span class="user-name">{userProfile.name}</span>
+				<span class="user-balance">{formatMoney(userProfile.balance)}</span>
+			</div>
+			<div class="avatar">
+				<img src={userProfile.avatar} alt="Avatar" />
+			</div>
+		</div>
+	</div>
 
-        <!-- Layout principal do cockpit -->
-        <div class="flex-1 flex items-center justify-center p-8">
-            <div class="cockpit-frame w-full h-[80vh] flex items-center justify-center gap-4">
-                <!-- Janela Esquerda -->
-                <CockpitWindow position="left">
-                    <HologramDisplay>
-                        <!-- Perfil e Status -->
-                        <button 
-                            on:click={handleProfileClick}
-                            class="w-full text-left hover:scale-105 transition-transform duration-300"
-                        >
-                            <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <h3 class="text-2xl font-bold text-blue-400">Status do Piloto</h3>
-                                    <span class="text-4xl">{$profile.currentLevel.icon}</span>
-                                </div>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-400">Nível</span>
-                                        <span class="text-white">{$profile.currentLevel.name}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-400">Investimento</span>
-                                        <span class="text-white">{formatCurrency($profile.currentAmount)}</span>
-                                    </div>
-                                    {#if $profile.nextLevel}
-                                        <div class="space-y-2">
-                                            <div class="flex justify-between text-sm">
-                                                <span class="text-gray-400">Próximo Nível</span>
-                                                <span class="text-blue-400">{$profile.nextLevel.name}</span>
-                                            </div>
-                                            <div class="h-2 bg-gray-800/50 rounded-full overflow-hidden">
-                                                <div
-                                                    class="h-full bg-gradient-to-r from-blue-600 to-cyan-400 transition-all duration-1000"
-                                                    style="width: {$profile.progressToNext}%"
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    {/if}
-                                </div>
-                            </div>
-                        </button>
-                    </HologramDisplay>
-                </CockpitWindow>
+	<!-- Conteúdo principal -->
+	<div class="dashboard-content">
+		<!-- Janela de status do piloto -->
+		<div class="dashboard-panel pilot-status" transition:fly={{ y: 20, duration: 400 }}>
+			<div class="panel-header">
+				<h2>Status do Piloto</h2>
+			</div>
+			<div class="panel-content">
+				<PilotStatus 
+					level={userProfile.level} 
+					rank={userProfile.rank} 
+					balance={userProfile.balance} 
+				/>
+			</div>
+		</div>
 
-                <!-- Janela Central -->
-                <CockpitWindow position="center">
-                    <HologramDisplay>
-                        <div class="space-y-6">
-                            <h2 class="text-2xl font-bold text-blue-400">Radar de Mercado</h2>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="bg-black/30 p-4 rounded-lg border border-blue-500/20">
-                                    <h3 class="text-blue-400 mb-2">IBOVESPA</h3>
-                                    <div class="text-2xl font-bold text-green-500">+1.8%</div>
-                                    <div class="text-sm text-gray-400">118.250 pts</div>
-                                </div>
-                                <div class="bg-black/30 p-4 rounded-lg border border-blue-500/20">
-                                    <h3 class="text-blue-400 mb-2">S&P 500</h3>
-                                    <div class="text-2xl font-bold text-red-500">-0.5%</div>
-                                    <div class="text-sm text-gray-400">4.850 pts</div>
-                                </div>
-                            </div>
-                        </div>
-                    </HologramDisplay>
-                </CockpitWindow>
+		<!-- Janela de radar de mercado -->
+		<div class="dashboard-panel market-radar" transition:fly={{ y: 20, duration: 400, delay: 100 }}>
+			<div class="panel-header">
+				<h2>Radar de Mercado</h2>
+			</div>
+			<div class="panel-content">
+				<MarketRadar />
+			</div>
+		</div>
 
-                <!-- Janela Direita -->
-                <CockpitWindow position="right">
-                    <HologramDisplay>
-                        <div class="space-y-6">
-                            <h2 class="text-2xl font-bold text-blue-400">Análise Tática</h2>
-                            <div class="space-y-4">
-                                <div class="bg-black/30 p-4 rounded-lg border border-blue-500/20">
-                                    <h3 class="text-blue-400 mb-3">Alertas Prioritários</h3>
-                                    <ul class="space-y-3">
-                                        <li class="flex items-center space-x-3">
-                                            <span class="text-green-500 text-2xl">▲</span>
-                                            <div>
-                                                <div class="text-white">PETR4</div>
-                                                <div class="text-sm text-gray-400">Oportunidade de compra</div>
-                                            </div>
-                                        </li>
-                                        <li class="flex items-center space-x-3">
-                                            <span class="text-red-500 text-2xl">▼</span>
-                                            <div>
-                                                <div class="text-white">VALE3</div>
-                                                <div class="text-sm text-gray-400">Alerta de venda</div>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </HologramDisplay>
-                </CockpitWindow>
-            </div>
-        </div>
-    </div>
+		<!-- Janela de análise tática -->
+		<div class="dashboard-panel tactical-analysis" transition:fly={{ y: 20, duration: 400, delay: 200 }}>
+			<div class="panel-header">
+				<h2>Análise Tática</h2>
+			</div>
+			<div class="panel-content">
+				<TacticalAnalysis />
+			</div>
+		</div>
+	</div>
 </div>
 
 <style>
-    .cockpit-frame {
-        perspective: 1000px;
-        transform-style: preserve-3d;
-    }
+	.hub-container {
+		position: relative;
+		width: 100%;
+		height: 100vh;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		color: #e0e0e0;
+		font-family: 'Inter', sans-serif;
+	}
 
-    :global(.window-container) {
-        animation: windowStartup 1.5s ease-out forwards;
-    }
+	.gradient-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: linear-gradient(135deg, rgba(20, 20, 25, 0.4) 0%, rgba(10, 10, 15, 0.7) 100%);
+		z-index: 1;
+		pointer-events: none;
+	}
 
-    @keyframes windowStartup {
-        0% {
-            opacity: 0;
-            transform: perspective(2000px) translateZ(-300px) rotateX(-60deg);
-        }
-        50% {
-            opacity: 0.5;
-        }
-        100% {
-            opacity: 1;
-            transform: perspective(2000px) translateZ(0) rotateX(0);
-        }
-    }
+	.top-bar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1rem 2rem;
+		background: rgba(25, 25, 30, 0.8);
+		backdrop-filter: blur(10px);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+		position: relative;
+		z-index: 10;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	}
+
+	.logo {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.logo img {
+		height: 2rem;
+		width: auto;
+	}
+
+	.logo-text {
+		font-weight: 700;
+		font-size: 1.25rem;
+		letter-spacing: 1px;
+		color: white;
+	}
+
+	.user-profile {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.5rem 1rem;
+		border-radius: 50px;
+		background: rgba(255, 255, 255, 0.05);
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.user-profile:hover {
+		background: rgba(255, 255, 255, 0.1);
+	}
+
+	.profile-info {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+	}
+
+	.user-name {
+		font-weight: 600;
+		font-size: 0.9rem;
+	}
+
+	.user-balance {
+		font-size: 0.8rem;
+		opacity: 0.8;
+	}
+
+	.avatar {
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 50%;
+		overflow: hidden;
+		border: 2px solid rgba(255, 255, 255, 0.2);
+	}
+
+	.avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.dashboard-content {
+		flex: 1;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		grid-gap: 1.5rem;
+		padding: 1.5rem;
+		position: relative;
+		z-index: 5;
+	}
+
+	.dashboard-panel {
+		background: rgba(30, 30, 35, 0.7);
+		border-radius: 12px;
+		backdrop-filter: blur(10px);
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		transition: transform 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.dashboard-panel:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 6px 25px rgba(0, 0, 0, 0.4);
+	}
+
+	.panel-header {
+		padding: 1rem 1.5rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		background: rgba(20, 20, 25, 0.5);
+	}
+
+	.panel-header h2 {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: white;
+	}
+
+	.panel-content {
+		padding: 1.5rem;
+		flex: 1;
+		overflow: auto;
+	}
+
+	/* Responsividade */
+	@media (max-width: 1200px) {
+		.dashboard-content {
+			grid-template-columns: 1fr 1fr;
+		}
+		
+		.tactical-analysis {
+			grid-column: span 2;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.dashboard-content {
+			grid-template-columns: 1fr;
+		}
+		
+		.dashboard-panel {
+			grid-column: span 1;
+		}
+		
+		.top-bar {
+			padding: 0.75rem 1rem;
+		}
+	}
 </style> 
