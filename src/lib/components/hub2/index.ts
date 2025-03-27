@@ -4,4 +4,7 @@ export { default as CockpitWindow } from './CockpitWindow.svelte';
 export { default as HologramDisplay } from './HologramDisplay.svelte';
 export { default as SidePanel } from './SidePanel.svelte';
 export { default as TopBar } from './TopBar.svelte';
-export { default as PlanetaryBackground } from './PlanetaryBackground.svelte'; 
+export { default as PlanetaryBackground } from './PlanetaryBackground.svelte';
+export { default as PilotStatus } from './PilotStatus.svelte';
+export { default as MarketRadar } from './MarketRadar.svelte';
+export { default as TacticalAnalysis } from './TacticalAnalysis.svelte'; 
