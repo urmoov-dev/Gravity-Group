@@ -1,9 +1,8 @@
 import { writable, derived } from 'svelte/store';
 import type { InvestmentCategory, InvestmentExample } from '$lib/types/profile';
-import { INVESTMENT_CATEGORIES } from '$lib/types/profile';
 
 // Store para as categorias de investimento
-export const investmentCategories = writable<InvestmentCategory[]>(INVESTMENT_CATEGORIES);
+export const investmentCategories = writable<InvestmentCategory[]>();
 
 // Store derivada para encontrar a categoria atual baseada no valor investido
 export const getCurrentCategory = derived(

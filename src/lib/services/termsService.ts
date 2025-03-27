@@ -1,7 +1,8 @@
-import { db } from '$lib/firebase';
+import app from '$lib/firebase';
 import type { TermsVersion, UserTermsAcceptance, TermsMetadata } from '$lib/types/terms';
-import { collection, doc, getDoc, getDocs, query, where, addDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, addDoc, updateDoc, Timestamp, getFirestore } from 'firebase/firestore';
 
+const db = getFirestore(app)
 export class TermsService {
     private static TERMS_COLLECTION = 'terms';
     private static ACCEPTANCES_COLLECTION = 'termsAcceptances';
