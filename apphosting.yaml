@@ -1,21 +1,99 @@
 # Settings for Backend (on Cloud Run).
 # See https://firebase.google.com/docs/app-hosting/configure#cloud-run
-runConfig:
-  minInstances: 0
-  # maxInstances: 100
-  # concurrency: 80
-  # cpu: 1
-  # memoryMiB: 512
+backends:
+  dev: # backend name
+    # directory for your application code
+    source: .
+    runConfig:
+      minInstances: 0
+      # maxInstances: 100
+      # concurrency: 80
+      # cpu: 1
+      # memoryMiB: 512
+
+    # list any environment variables your application needs
+    envs:
+      NODE_ENV: production
+    # defines how incoming requests are routed
+    routes:
+      - path: "/"
+        # tells Firebase to forward all requests to your application
+        handler:
+          node_server:
+            # location of the built app
+            path: build
 
 # Environment variables and secrets.
-# env:
+env:
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
-  # - variable: MESSAGE
-  #   value: Hello world!
-  #   availability:
-  #     - BUILD
-  #     - RUNTIME
+  - variable: VITE_FIREBASE_API_KEY
+    value: 'AIzaSyBTF3VN0bKW5G1E7c6r9jD6jZcYjI6RoY0'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: OPENAI_API_KEY
+    value: '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'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: VITE_FIREBASE_AUTH_DOMAIN
+    value: 'gravity-group-2025.firebaseapp.com'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: VITE_FIREBASE_AUTH_DOMAIN
+    value: 'gravity-group-2025.firebaseapp.com'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: VITE_FIREBASE_PROJECT_ID
+    value: 'gravity-group-2025'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: VITE_FIREBASE_STORAGE_BUCKET
+    value: 'gravity-group-2025.firebasestorage.app'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: VITE_FIREBASE_MESSAGING_SENDER_ID
+    value: '113780516172'
+    availability:
+      - BUILD
+      - RUNTIME
+
+
+  - variable: VITE_FIREBASE_APP_ID
+    value: '1:113780516172:web:7a197ec3e948173ee81be9'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: VITE_FIREBASE_MEASUREMENT_ID
+    value: 'G-F0MWX9Y6CC'
+    availability:
+      - BUILD
+      - RUNTIME
+
+
+  - variable: FIREBASE_CLIENT_EMAIL
+    value: 'firebase-adminsdk-fbsvc@gravity-group-2025.iam.gserviceaccount.com'
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_PRIVATE_KEY
+    value: '-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCbMqM5EO+dQPQZ\n74RD1QVg1Kzkn1TlDeJ6V5RzH5QiQ5HNFeJgxL7LB6EUeG5DXjwG8hdaPjru83GO\nEI0mSzDM9chTzcpByP0PX9ycZDYfSVaQKF5pZGHIkOq/zaOu76qZg3x6lNr9mGWl\nYwgMBFb366q0xla8k/habnHEtiEHTy8074kVUjBtJYBawckzTJ27FHCyuCwkTJjC\nivW+hLaaj4EPMBJwk95UMRDkyph9fM9izSDWQj9+gLxdnLXw2VrxGAjPvuEEgzmW\nfNzqzLPEg3+JQdcKMMmKeTwIDv+w21Fyok7ChmPKYeVopLq4jb8T7LUHsIy0UUYF\nX1V+MdQRAgMBAAECggEAGgpumdIuKnguHTXzvv/81YkJ85iKgZ6JTFbqqUB4tiEZ\nU0yjPfJ1QxLmI82rTrF+p/myEmnTsKl3ectsK6s9Jn7tHKawk8Y6M/y1QyaLcEd5\nd1nWsZ9uyt0KDqHeH6nGOdj2p4jXj+qkz5Hk1UNbJmFMNOX8wsqfRuk2PLgEpbmQ\nIxS1btzh2+ns5JFgiL8tc9CiX51zODTbjOS7LVYM39QihjmS6Cv+XZjHVqksbni8\nQNNeVUfa9i20qB2/v0EIQl655WDZ5fGmvwrf8di588Flz1V4I5Ayi6sUcHZpx5gz\nIbS8vE+KfAK1q58xvF6tTCBiTtEl1zstlGbFSgHceQKBgQDTl4ax+NP0vgA7sMs0\nxIBa4LQVChAgZiFrHzEbpz+yZs7zwZzaQc9lhjlFDGUR6RXOFD8BFlT7P0SitNE0\nMQsWm0gtrnXHt3OLriX1DcyM836XC7qYbOCJq/q9Bup8JkFycUVtoCD6udjkxmrD\nMtnwHh9K2xnpwIClsqHaPlEsvQKBgQC7xSb9+c9b94FYfLNJRR8cSidpEvIsdZ1E\nqv3wt7YDZt0M3qqOAsU0T/MAh5dI6zu+0T88T5uASSL2Jk/ehT/rlPugyZ5SKuKF\n6GUVZ9zUJi5wOz5GDT+IJTpXTJjTz6aByD+AUqNFPzUSyNP63IoQMhf+grDnjNW3\npeZ5K8575QKBgAdiP0oQo9zjkICEv+KchNonA0HEsyFeTwY89WrAoGFqYwhwljer\nmkAxuefl8dT5LFCftj8kd1y5LXz8EFzg5UEptBAcCXIpvbd/IUX28E9u49kDiMRu\n8Dr9rGdSSXaBo0EKIOEdeGkneSEqp2keaiqN8oubL8FPfW3K2QkTqaOFAoGAWMfo\nHs/d7oMBQmB7uNoY0pxxM+pEXScjPBOJTCbgxYz+WZZymADRU2G16PszWcP3lMqF\nFrQhNy/devs0amcgiPgBXc3WsM0cG+p82Pkp3ZlL/b7VO/QJpQrNIffSjtuww851\nz+vCzPwM0RvptsRN90hoNet/T4w0hMfJSGOhFs0CgYB2UXMF0+QakGGHjKN2I7TX\nGVDQSAIGeneiSPtIRSr26Oh3mq08JvvJtLzcNIpG0znxbQH9xxtGSWImgay2vjhG\nyODlg0wrFBQijHw3dxOpjuWD2pa5R1imCKh5V02mWjhyxoz84FhTFSK7y9w7OxLT\n0AVgSfWXg1HVoQap+M38SA==\n-----END PRIVATE KEY-----\n'
+    availability:
+      - BUILD
+      - RUNTIME
 
   # Grant access to secrets in Cloud Secret Manager.
   # See https://firebase.google.com/docs/app-hosting/configure#secret-parameters
